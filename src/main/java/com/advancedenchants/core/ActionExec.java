@@ -302,32 +302,49 @@ public final class ActionExec {
         }
     }
 
+    /**
+     * 掉落数量倍率。
+     *
+     * 两种语义都支持：
+     *  - factor &gt; 1：增产。小数部分按概率取整（1.25 → 1 个 + 25% 概率再多 1 个），
+     *    而不是 floor(1×(1.25-1)) = 0（那样 13 处 base &lt; 2 的配置在 Lv1 完全没有效果）。
+     *  - factor &lt; 1：减产。按概率保留（0.5 → 一半概率保留），用于"破坏的方块只有 50% 掉落"这类意图。
+     */
     private void multiplyDrop(TriggerCtx ctx, ActionDef a, int level, EnchantDef def) {
         List<ItemStack> drops = ctx.drops;
         if (drops == null || drops.isEmpty()) {
             return;
         }
         double factor = scaled(a, level, def);
-        if (factor <= 1.0) {
+        if (factor <= 0) {
             return;
         }
-        List<ItemStack> extra = new ArrayList<>();
-        for (ItemStack drop : drops) {
+        if (factor == 1.0) {
+            return;
+        }
+        int cap = Math.max(1, a.i("max-per-stack", 64));
+        for (int i = 0; i < drops.size(); i++) {
+            ItemStack drop = drops.get(i);
             if (drop == null || drop.getType().isAir()) {
                 continue;
             }
-            int amount = (int) Math.min(64, Math.floor(drop.getAmount() * (factor - 1.0)));
-            if (amount <= 0) {
-                continue;
-            }
-            int max = drop.getType().getMaxStackSize();
-            while (amount > 0) {
-                int give = Math.min(max, amount);
-                extra.add(new ItemStack(drop.getType(), give));
-                amount -= give;
-            }
+            int total = rollAmount(drop.getAmount(), factor, cap);
+            drops.set(i, new ItemStack(drop.getType(), total));
         }
-        drops.addAll(extra);
+    }
+
+    /** 按倍率掷出最终数量：整数部分保底 + 小数部分按概率进位。 */
+    private int rollAmount(int original, double factor, int cap) {
+        if (original <= 0) {
+            return 0;
+        }
+        double exact = original * factor;
+        int amount = (int) Math.floor(exact);
+        double fraction = exact - amount;
+        if (fraction > 0 && random.nextDouble() < fraction) {
+            amount++;
+        }
+        return Math.max(0, Math.min(cap * original, amount));
     }
 
     // ==================================================================== 实体 / 状态
