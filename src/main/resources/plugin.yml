@@ -1,0 +1,24 @@
+name: AdvancedEnchants
+version: '1.0.0'
+main: com.advancedenchants.AdvancedEnchants
+api-version: '1.20'
+authors: [AdvancedEnchants]
+description: 配置驱动的自定义附魔引擎：129 条分级附魔，覆盖全部工具与武器类型，玩家可用 YAML 自行设计附魔。
+website: https://example.com/advancedenchants
+folia-supported: false
+
+commands:
+  advancedenchants:
+    description: AdvancedEnchants 管理指令
+    usage: /ae help
+    aliases: [ae, aench, advench]
+    permission: advancedenchants.use
+    permission-message: 你没有权限使用该指令。
+
+permissions:
+  advancedenchants.use:
+    description: 允许使用 /ae enchant / clear / inspect
+    default: true
+  advancedenchants.admin:
+    description: 允许 reload / list / give / debug
+    default: op

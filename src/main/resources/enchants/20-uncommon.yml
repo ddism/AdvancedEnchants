@@ -1,0 +1,929 @@
+# AdvancedEnchants - 优秀级附魔
+# 契约：docs/ENCHANT_ROSTER.md（tier = UNCOMMON，31 条，ID / 等级 / 适用类型逐字一致）
+# 规范：docs/SCHEMA.md（Schema v1），触发器、条件、动作全部取自规范表，无自创 type
+# 约定：比例一律 0~1 小数；description 中的字面百分号写作 %%；2 空格缩进，无 Tab
+
+enchants:
+
+  # ================================================================ 剑 SWORD
+
+  first_strike:                       # 7 先手 UNCOMMON SWORD
+    display: "&6先手"
+    tier: UNCOMMON
+    max-level: 3
+    types: [SWORD]
+    description:
+      - "&7目标满血时必定暴击，暴击伤害 &f×{value}"
+    triggers:
+      ON_HIT:
+        conditions:
+          - type: TARGET_HEALTH
+            value: 1.0
+            mode: ABOVE
+        actions:
+          - type: DAMAGE_MULTIPLY
+            base: 1.3
+            per-level: 0.15
+            max: 2.0
+          - type: PARTICLE
+            particle: CRIT
+            count: 12
+            spread: 0.4
+            speed: 0.1
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_PLAYER_ATTACK_CRIT
+            volume: 0.7
+            pitch: 1.3
+
+  combo_master:                       # 8 连击大师 UNCOMMON SWORD
+    display: "&6连击大师"
+    tier: UNCOMMON
+    max-level: 3
+    types: [SWORD]
+    description:
+      - "&7连续命中叠加印记，每层使目标受到 &f+2.5%%/级 &7易伤（上限 6 层）"
+      - "&7当前命中伤害 &f×{value}"
+    triggers:
+      ON_HIT:
+        actions:
+          - type: DAMAGE_MULTIPLY
+            base: 1.02
+            per-level: 0.02
+            max: 1.15
+          - type: MARK
+            base: 0.025
+            per-level: 0.025
+            max: 0.15
+            duration: 5
+            duration-per-level: 1
+          - type: PARTICLE
+            particle: SWEEP_ATTACK
+            count: 3
+            spread: 0.3
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_PLAYER_ATTACK_SWEEP
+            volume: 0.35
+            pitch: 1.6
+
+  execute:                            # 9 处决 UNCOMMON SWORD, AXE
+    display: "&4处决"
+    tier: UNCOMMON
+    max-level: 3
+    types: [SWORD, AXE]
+    description:
+      - "&7目标生命低于 &f20%% &7时伤害 &f×{value}"
+    triggers:
+      ON_HIT:
+        conditions:
+          - type: TARGET_HEALTH
+            value: 0.2
+            mode: BELOW
+        actions:
+          - type: DAMAGE_MULTIPLY
+            base: 1.25
+            per-level: 0.25
+            max: 2.5
+          - type: PARTICLE
+            particle: DAMAGE_INDICATOR
+            count: 8
+            spread: 0.3
+            who: TARGET
+          - type: SOUND
+            sound: BLOCK_ANVIL_LAND
+            volume: 0.5
+            pitch: 0.8
+
+  venom_blade:                        # 10 淬毒之刃 UNCOMMON SWORD
+    display: "&2淬毒之刃"
+    tier: UNCOMMON
+    max-level: 3
+    types: [SWORD]
+    description:
+      - "&7命中使目标中毒 &f{value} &7秒，中毒等级随附魔等级提升"
+    triggers:
+      ON_HIT:
+        actions:
+          - type: POTION
+            who: TARGET
+            potion: POISON
+            duration: 60
+            duration-per-level: 40
+            amplifier: 0
+            amplifier-per-level: 1
+          - type: PARTICLE
+            particle: ITEM_SLIME
+            count: 10
+            spread: 0.4
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_WITCH_DRINK
+            volume: 0.4
+            pitch: 1.2
+
+  frostbite:                          # 11 霜噬 UNCOMMON SWORD
+    display: "&b霜噬"
+    tier: UNCOMMON
+    max-level: 3
+    types: [SWORD]
+    description:
+      - "&7命中附加缓慢与挖掘疲劳，持续 &f{value} &7秒"
+    triggers:
+      ON_HIT:
+        actions:
+          - type: POTION
+            who: TARGET
+            potion: SLOWNESS
+            duration: 60
+            duration-per-level: 40
+            amplifier: 0
+            amplifier-per-level: 1
+          # 药水键名跨版本兼容：1.20.4 = SLOW_DIGGING，1.20.5+ = MINING_FATIGUE。
+          # 两条都写，未能解析的那条只会告警并被忽略，保证两个版本都有挖掘疲劳。
+          - type: POTION
+            who: TARGET
+            potion: MINING_FATIGUE
+            duration: 60
+            duration-per-level: 40
+            amplifier: 0
+            amplifier-per-level: 1
+          - type: POTION
+            who: TARGET
+            potion: SLOW_DIGGING
+            duration: 60
+            duration-per-level: 40
+            amplifier: 0
+            amplifier-per-level: 1
+          - type: PARTICLE
+            particle: SNOWFLAKE
+            count: 12
+            spread: 0.4
+            who: TARGET
+          - type: SOUND
+            sound: BLOCK_POWDER_SNOW_BREAK
+            volume: 0.5
+            pitch: 1.4
+
+  blinding_strike:                    # 12 致盲打击 UNCOMMON SWORD
+    display: "&e致盲打击"
+    tier: UNCOMMON
+    max-level: 3
+    types: [SWORD]
+    description:
+      - "&7命中使目标失明 &f{value} &7秒"
+    triggers:
+      ON_HIT:
+        actions:
+          - type: POTION
+            who: TARGET
+            potion: BLINDNESS
+            duration: 40
+            duration-per-level: 40
+            amplifier: 0
+          - type: PARTICLE
+            particle: SMOKE
+            count: 10
+            spread: 0.4
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_PLAYER_HURT
+            volume: 0.3
+            pitch: 0.7
+
+  # ================================================================ 斧 / 三叉戟
+
+  lumberjack:                         # 26 伐木狂 UNCOMMON AXE, PICKAXE, SHOVEL
+    # SCHEMA 没有「挖掘速度倍率」动作：用 PASSIVE + HASTE 常驻近似，每级约 15%% 增速
+    display: "&6伐木狂"
+    tier: UNCOMMON
+    max-level: 3
+    types: [AXE, PICKAXE, SHOVEL]
+    description:
+      - "&7手持时持续获得急迫，破坏方块速度提升"
+    triggers:
+      PASSIVE:
+        actions:
+          - type: POTION
+            who: SELF
+            potion: HASTE
+            duration: 40
+            amplifier: 0
+            amplifier-per-level: 1
+      ON_BLOCK_BREAK:
+        actions:
+          - type: PARTICLE
+            particle: CRIT
+            count: 4
+            spread: 0.3
+            who: BLOCK
+          - type: SOUND
+            sound: BLOCK_STONE_BREAK
+            volume: 0.2
+            pitch: 1.5
+
+  tidal_force:                        # 33 潮汐之力 UNCOMMON TRIDENT
+    display: "&3潮汐之力"
+    tier: UNCOMMON
+    max-level: 3
+    types: [TRIDENT]
+    description:
+      - "&7雨天造成的伤害 &f×{value}（近战与投掷均生效）"
+    triggers:
+      ON_HIT:
+        conditions:
+          - type: IN_RAIN
+            value: true
+        actions:
+          - type: DAMAGE_MULTIPLY
+            base: 1.12
+            per-level: 0.12
+            max: 2.0
+          - type: PARTICLE
+            particle: DRIPPING_WATER
+            count: 10
+            spread: 0.4
+            who: TARGET
+          - type: SOUND
+            sound: ITEM_TRIDENT_THUNDER
+            volume: 0.35
+            pitch: 1.6
+      ON_PROJECTILE_HIT:
+        conditions:
+          - type: IN_RAIN
+            value: true
+        actions:
+          - type: DAMAGE_MULTIPLY
+            base: 1.12
+            per-level: 0.12
+            max: 2.0
+
+  # ================================================================ 弓 / 弩
+
+  multishot_plus:                     # 41 多重射击 UNCOMMON CROSSBOW
+    display: "&a多重射击"
+    tier: UNCOMMON
+    max-level: 3
+    types: [CROSSBOW]
+    description:
+      - "&7射出弩箭时额外发射 &f{value} &7支箭矢"
+    triggers:
+      ON_SHOOT:
+        actions:
+          - type: SPAWN_PROJECTILE
+            projectile: ARROW
+            count: 1
+            count-per-level: 1
+            speed: 3.0
+            spread: 4
+          - type: PARTICLE
+            particle: CRIT
+            count: 6
+            spread: 0.3
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_ARROW_SHOOT
+            volume: 0.5
+            pitch: 1.2
+
+  piercing_shot:                      # 42 穿透射击 UNCOMMON BOW, CROSSBOW
+    # SCHEMA 无「穿透」动作：命中后重发一支箭矢 + 追加伤害近似穿透
+    display: "&f穿透射击"
+    tier: UNCOMMON
+    max-level: 3
+    types: [BOW, CROSSBOW]
+    description:
+      - "&7箭矢命中后继续飞行，穿透伤害 &f+{value}"
+    triggers:
+      ON_PROJECTILE_HIT:
+        conditions:
+          - type: PROJECTILE_DISTANCE
+            min: 0.5
+        actions:
+          - type: DAMAGE_ADD
+            base: 0.15
+            per-level: 0.1
+            max: 0.5
+          - type: SPAWN_PROJECTILE
+            projectile: ARROW
+            count: 1
+            speed: 3.0
+            spread: 0
+          - type: PARTICLE
+            particle: CRIT
+            count: 4
+            spread: 0.2
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_ARROW_HIT
+            volume: 0.4
+            pitch: 1.3
+
+  poison_arrow:                       # 43 毒箭 UNCOMMON BOW, CROSSBOW
+    display: "&2毒箭"
+    tier: UNCOMMON
+    max-level: 3
+    types: [BOW, CROSSBOW]
+    description:
+      - "&7箭矢命中使目标中毒 &f{value} &7秒"
+    triggers:
+      ON_PROJECTILE_HIT:
+        actions:
+          - type: POTION
+            who: TARGET
+            potion: POISON
+            duration: 60
+            duration-per-level: 40
+            amplifier: 0
+            amplifier-per-level: 1
+          - type: PARTICLE
+            particle: ITEM_SLIME
+            count: 10
+            spread: 0.4
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_WITCH_DRINK
+            volume: 0.35
+            pitch: 1.3
+
+  quick_draw:                         # 44 速射 UNCOMMON BOW
+    # SCHEMA 没有「拉弓速度」动作/条件：用 ON_SHOOT 更高的箭矢初速近似缩短蓄力
+    display: "&e速射"
+    tier: UNCOMMON
+    max-level: 3
+    types: [BOW]
+    description:
+      - "&7蓄力更快，射出箭矢初速 &f{value}"
+    triggers:
+      ON_SHOOT:
+        actions:
+          - type: SPAWN_PROJECTILE
+            projectile: ARROW
+            count: 1
+            speed: 3.5
+            spread: 0
+          - type: PARTICLE
+            particle: CRIT
+            count: 5
+            spread: 0.25
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_ARROW_SHOOT
+            volume: 0.4
+            pitch: 1.7
+
+  # ================================================================ 盔甲 ARMOR
+
+  last_stand:                         # 58 背水一战 UNCOMMON ARMOR
+    display: "&c背水一战"
+    tier: UNCOMMON
+    max-level: 3
+    types: [ARMOR]
+    description:
+      - "&7生命低于 &f35%% &7时获得减伤与抗性提升"
+    triggers:
+      ON_DAMAGED:
+        conditions:
+          - type: HEALTH
+            value: 0.35
+            mode: BELOW
+        actions:
+          - type: DAMAGE_REDUCE
+            base: 0.15
+            per-level: 0.1
+            max: 0.5
+          - type: POTION
+            who: SELF
+            potion: RESISTANCE
+            duration: 60
+            duration-per-level: 20
+            amplifier: 0
+            amplifier-per-level: 1
+          - type: PARTICLE
+            particle: ENCHANT
+            count: 10
+            spread: 0.4
+            who: SELF
+          - type: SOUND
+            sound: ITEM_SHIELD_BLOCK
+            volume: 0.5
+            pitch: 0.8
+
+  fireproof:                          # 59 耐火 UNCOMMON ARMOR
+    display: "&6耐火"
+    tier: UNCOMMON
+    max-level: 3
+    types: [ARMOR]
+    description:
+      - "&7受到火焰伤害减免 &f20%% &7起，每级 &f+10%%"
+      - "&7被点燃时立即熄灭，燃烧时间大幅缩短"
+    triggers:
+      ON_DAMAGED:
+        conditions:
+          - type: BURNING
+            value: true
+        actions:
+          - type: DAMAGE_REDUCE
+            base: 0.2
+            per-level: 0.1
+            max: 0.6
+          - type: EXTINGUISH
+            who: SELF
+          - type: PARTICLE
+            particle: LARGE_SMOKE
+            count: 8
+            spread: 0.4
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_FIRE_EXTINGUISH
+            volume: 0.6
+            pitch: 1.2
+
+  deep_diver:                         # 60 深潜者 UNCOMMON ARMOR
+    display: "&3深潜者"
+    tier: UNCOMMON
+    max-level: 3
+    types: [ARMOR]
+    description:
+      - "&7水下获得水下呼吸与海豚之力（水下挖掘加速）"
+    triggers:
+      PASSIVE:
+        conditions:
+          - type: IN_WATER
+            value: true
+        actions:
+          - type: POTION
+            who: SELF
+            potion: WATER_BREATHING
+            duration: 40
+            amplifier: 0
+          - type: POTION
+            who: SELF
+            potion: CONDUIT_POWER
+            duration: 40
+            amplifier: 0
+            amplifier-per-level: 1
+          - type: PARTICLE
+            particle: BUBBLE
+            count: 3
+            spread: 0.3
+            who: SELF
+
+  regeneration_aura:                  # 61 再生光环 UNCOMMON ARMOR
+    # SCHEMA 无「脱战」判定：用 HEALTH < 90%% 近似「需要回血时」持续回复
+    display: "&a再生光环"
+    tier: UNCOMMON
+    max-level: 3
+    types: [ARMOR]
+    description:
+      - "&7生命未满时每秒回复 &f{value} &7颗心"
+    triggers:
+      PASSIVE:
+        conditions:
+          - type: HEALTH
+            value: 0.9
+            mode: BELOW
+        actions:
+          - type: HEAL
+            base: 0.5
+            per-level: 0.5
+            max: 2.0
+          - type: POTION
+            who: SELF
+            potion: REGENERATION
+            duration: 40
+            amplifier: 0
+          - type: PARTICLE
+            particle: HEART
+            count: 2
+            spread: 0.3
+            who: SELF
+
+  deflect:                            # 62 偏转 UNCOMMON ARMOR
+    # SCHEMA 无「来袭伤害是否为投射物」条件：以概率闪避整次伤害近似免疫投射物
+    display: "&f偏转"
+    tier: UNCOMMON
+    max-level: 3
+    types: [ARMOR]
+    description:
+      - "&7受到伤害时有 &f10%% &7起、每级 &f+8%% &7的概率完全偏转"
+    triggers:
+      ON_DAMAGED:
+        chance: 10
+        chance-per-level: 8
+        actions:
+          - type: DODGE
+            base: 1.0
+          - type: PARTICLE
+            particle: ENCHANT
+            count: 8
+            spread: 0.4
+            who: SELF
+          - type: SOUND
+            sound: ITEM_SHIELD_BLOCK
+            volume: 0.4
+            pitch: 1.6
+
+  # ================================================================ 工具 TOOL
+
+  tree_feller:                        # 82 伐木连锁 UNCOMMON AXE
+    display: "&6伐木连锁"
+    tier: UNCOMMON
+    max-level: 3
+    types: [AXE]
+    description:
+      - "&7砍伐原木时连锁砍倒整棵树"
+      - "&7限流 &f64 &7方块，只处理原木/树叶，不破坏地形"
+    triggers:
+      ON_BLOCK_BREAK:
+        conditions:
+          - type: BLOCK
+            value: ["*_LOG", "*_WOOD", "*_STEM", "*_HYPHAE"]
+        actions:
+          - type: TREE_FELL
+            limit: 64
+          - type: PARTICLE
+            particle: CRIT
+            count: 6
+            spread: 0.4
+            who: BLOCK
+          - type: SOUND
+            sound: BLOCK_WOOD_BREAK
+            volume: 0.5
+            pitch: 0.8
+
+  harvester:                          # 83 丰收 UNCOMMON HOE
+    display: "&e丰收"
+    tier: UNCOMMON
+    max-level: 3
+    types: [HOE]
+    description:
+      - "&7收获作物后自动补种"
+    triggers:
+      ON_BLOCK_BREAK:
+        conditions:
+          - type: BLOCK
+            value: [WHEAT, CARROTS, POTATOES, BEETROOTS, NETHER_WART, PUMPKIN_STEM, MELON_STEM, COCOA, SWEET_BERRY_BUSH]
+        actions:
+          - type: AUTO_REPLANT
+          - type: PARTICLE
+            particle: HAPPY_VILLAGER
+            count: 6
+            spread: 0.5
+            who: BLOCK
+          - type: SOUND
+            sound: ITEM_CROP_PLANT
+            volume: 0.5
+            pitch: 1.2
+
+  farmer_gift:                        # 84 农夫的馈赠 UNCOMMON HOE
+    # SCHEMA 没有「作物生长速度」动作：仅实现额外掉落，催熟用骨粉音效/粒子做反馈
+    display: "&a农夫的馈赠"
+    tier: UNCOMMON
+    max-level: 3
+    types: [HOE]
+    description:
+      - "&7收获作物时额外掉落，掉落倍率 &f×{value}"
+    triggers:
+      ON_BLOCK_BREAK:
+        conditions:
+          - type: BLOCK
+            value: [WHEAT, CARROTS, POTATOES, BEETROOTS, NETHER_WART, PUMPKIN_STEM, MELON_STEM, COCOA, SWEET_BERRY_BUSH]
+        actions:
+          - type: MULTIPLY_DROP
+            base: 1.25
+            per-level: 0.25
+            max: 3.0
+          - type: PARTICLE
+            particle: COMPOSTER
+            count: 6
+            spread: 0.5
+            who: BLOCK
+          - type: SOUND
+            sound: ITEM_BONE_MEAL_USE
+            volume: 0.4
+            pitch: 1.3
+
+  excavator:                          # 85 挖掘者 UNCOMMON SHOVEL
+    display: "&6挖掘者"
+    tier: UNCOMMON
+    max-level: 3
+    types: [SHOVEL]
+    description:
+      - "&7挖掘沙土类方块时一并破坏周围 3×3"
+      - "&7限流 &f9 &7方块，正常掉落"
+    triggers:
+      ON_BLOCK_BREAK:
+        conditions:
+          - type: BLOCK
+            value: [DIRT, GRASS_BLOCK, PODZOL, COARSE_DIRT, ROOTED_DIRT, MYCELIUM, SAND, RED_SAND, GRAVEL, CLAY, SOUL_SAND, SOUL_SOIL, SNOW_BLOCK, MUD, MOSS_BLOCK]
+        actions:
+          - type: BREAK_BLOCK
+            radius: 1
+            drops: true
+            limit: 9
+          - type: PARTICLE
+            particle: CRIT
+            count: 8
+            spread: 0.5
+            who: BLOCK
+          - type: SOUND
+            sound: BLOCK_GRAVEL_BREAK
+            volume: 0.5
+            pitch: 1.0
+
+  soil_purifier:                      # 86 净壤 UNCOMMON SHOVEL
+    display: "&e净壤"
+    tier: UNCOMMON
+    max-level: 3
+    types: [SHOVEL]
+    description:
+      - "&7将沙土、菌丝与积雪净化为可耕地（3×3 范围）"
+    triggers:
+      ON_BLOCK_BREAK:
+        conditions:
+          - type: BLOCK
+            value: [SAND, RED_SAND, DIRT, COARSE_DIRT, ROOTED_DIRT, PODZOL, MYCELIUM, GRAVEL, SNOW_BLOCK, SNOW, MOSS_BLOCK]
+        actions:
+          - type: SET_BLOCK
+            material: FARMLAND
+            chance: 100
+            radius: 1
+          - type: PARTICLE
+            particle: HAPPY_VILLAGER
+            count: 8
+            spread: 0.5
+            who: BLOCK
+          - type: SOUND
+            sound: ITEM_HOE_TILL
+            volume: 0.6
+            pitch: 1.1
+
+  wool_shear:                         # 87 羊毛剪 UNCOMMON SHEARS
+    # SCHEMA 无剪羊毛专属条件：用 ON_INTERACT + TARGET_TYPE 判定羊
+    display: "&f羊毛剪"
+    tier: UNCOMMON
+    max-level: 3
+    types: [SHEARS]
+    description:
+      - "&7剪羊毛范围扩大并自动收集，产量倍率 &f×{value}"
+    triggers:
+      ON_INTERACT:
+        conditions:
+          - type: TARGET_TYPE
+            value: [SHEEP]
+        actions:
+          - type: SHEAR_AREA
+            radius: 2
+          - type: MULTIPLY_DROP
+            base: 2.0
+            per-level: 0.5
+            max: 4.0
+          - type: PARTICLE
+            particle: HAPPY_VILLAGER
+            count: 8
+            spread: 0.5
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_SHEEP_SHEAR
+            volume: 0.7
+            pitch: 1.1
+
+  # ================================================================ 钓鱼竿 FISHING_ROD
+
+  treasure_hunter:                    # 97 宝藏猎手 UNCOMMON FISHING_ROD
+    # SCHEMA 无「宝物权重」动作：用 CONVERT_DROP 转宝物 + MULTIPLY_DROP 近似
+    display: "&6宝藏猎手"
+    tier: UNCOMMON
+    max-level: 3
+    types: [FISHING_ROD]
+    description:
+      - "&7有 &f15%% &7起、每级 &f+10%% &7的几率将渔获转化为宝物"
+      - "&7渔获数量倍率 &f×1.2"
+    triggers:
+      ON_FISH:
+        actions:
+          - type: CONVERT_DROP
+            material: DIAMOND
+            base: 0.15
+            per-level: 0.1
+            max: 0.6
+          - type: MULTIPLY_DROP
+            base: 1.2
+            per-level: 0.2
+            max: 2.5
+          - type: PARTICLE
+            particle: ENCHANT
+            count: 12
+            spread: 0.5
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_FISHING_BOBBER_RETRIEVE
+            volume: 0.5
+            pitch: 1.3
+
+  golden_catch:                       # 98 黄金渔获 UNCOMMON FISHING_ROD
+    display: "&e黄金渔获"
+    tier: UNCOMMON
+    max-level: 3
+    types: [FISHING_ROD]
+    description:
+      - "&7有 &f20%% &7起、每级 &f+10%% &7的几率钓上金锭"
+    triggers:
+      ON_FISH:
+        actions:
+          - type: CONVERT_DROP
+            material: GOLD_INGOT
+            base: 0.2
+            per-level: 0.1
+            max: 0.6
+          - type: PARTICLE
+            particle: GLOW
+            count: 10
+            spread: 0.4
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_EXPERIENCE_ORB_PICKUP
+            volume: 0.5
+            pitch: 1.4
+
+  auto_reel:                          # 99 自动收竿 UNCOMMON FISHING_ROD
+    # SCHEMA 无「自动收竿 / 自动重新抛竿」动作：用咬钩提示 + 音效 + 渔获加成近似
+    display: "&b自动收竿"
+    tier: UNCOMMON
+    max-level: 3
+    types: [FISHING_ROD]
+    description:
+      - "&7咬钩瞬间自动提示收竿，并提升渔获数量"
+    triggers:
+      ON_FISH:
+        chance: 40
+        chance-per-level: 20
+        actions:
+          - type: ACTIONBAR
+            value: "&b自动收竿！"
+          - type: SOUND
+            sound: ENTITY_FISHING_BOBBER_RETRIEVE
+            volume: 0.6
+            pitch: 1.5
+
+  # ================================================================ 鞘翅 ELYTRA
+
+  glide_boost:                        # 105 滑翔加速 UNCOMMON ELYTRA
+    # SCHEMA 无「是否正在滑翔」条件：用 PASSIVE + Y 高度区间近似滑翔状态
+    display: "&b滑翔加速"
+    tier: UNCOMMON
+    max-level: 3
+    types: [ELYTRA]
+    description:
+      - "&7高空滑翔时持续获得速度提升（水平速度更快）"
+    triggers:
+      PASSIVE:
+        conditions:
+          - type: Y
+            min: 40
+            max: 320
+        actions:
+          - type: POTION
+            who: SELF
+            potion: SPEED
+            duration: 40
+            amplifier: 0
+            amplifier-per-level: 1
+          - type: PARTICLE
+            particle: CLOUD
+            count: 3
+            spread: 0.3
+            who: SELF
+
+  # ================================================================ 通用 ALL
+
+  unbreakable_will:                   # 114 坚不可摧 UNCOMMON ALL
+    # SCHEMA 无「取消耐久消耗」事件：用概率触发 DURABILITY 修复抵消损耗近似
+    display: "&7坚不可摧"
+    tier: UNCOMMON
+    max-level: 3
+    types: [ALL]
+    description:
+      - "&7攻击方块时有 &f12%% &7起、每级 &f+8%% &7的几率不消耗耐久"
+      - "&7触发时立即修复 &f{value} &7点耐久"
+    triggers:
+      ON_HIT:
+        chance: 12
+        chance-per-level: 8
+        actions:
+          - type: DURABILITY
+            base: 1
+            per-level: 1
+            max: 5
+          - type: PARTICLE
+            particle: ENCHANT
+            count: 5
+            spread: 0.3
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_ANVIL_USE
+            volume: 0.3
+            pitch: 1.6
+      ON_BLOCK_BREAK:
+        chance: 12
+        chance-per-level: 8
+        actions:
+          - type: DURABILITY
+            base: 1
+            per-level: 1
+            max: 5
+
+  soul_collector:                     # 115 灵魂收集 UNCOMMON ALL
+    display: "&5灵魂收集"
+    tier: UNCOMMON
+    max-level: 3
+    types: [ALL]
+    description:
+      - "&7击杀收集 &f{value} &7个灵魂，可用于强化其他附魔"
+    triggers:
+      ON_KILL:
+        actions:
+          - type: SOULS
+            base: 1
+            per-level: 1
+            max: 5
+          - type: PARTICLE
+            particle: SOUL
+            count: 10
+            spread: 0.4
+            who: TARGET
+          - type: SOUND
+            sound: BLOCK_SOUL_SAND_BREAK
+            volume: 0.5
+            pitch: 0.8
+
+  vampiric_touch:                     # 121 吸血之触 UNCOMMON ALL
+    display: "&4吸血之触"
+    tier: UNCOMMON
+    max-level: 3
+    types: [ALL]
+    description:
+      - "&7造成伤害时有 &f15%% &7起、每级 &f+10%% &7的几率汲取生命"
+    triggers:
+      ON_HIT:
+        chance: 15
+        chance-per-level: 10
+        actions:
+          - type: LIFESTEAL
+            base: 0.05
+            per-level: 0.03
+            max: 0.2
+          - type: PARTICLE
+            particle: HEART
+            count: 4
+            spread: 0.3
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_WITCH_DRINK
+            volume: 0.3
+            pitch: 1.5
+      ON_PROJECTILE_HIT:
+        chance: 15
+        chance-per-level: 10
+        actions:
+          - type: LIFESTEAL
+            base: 0.05
+            per-level: 0.03
+            max: 0.2
+          - type: PARTICLE
+            particle: HEART
+            count: 4
+            spread: 0.3
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_WITCH_DRINK
+            volume: 0.3
+            pitch: 1.5
+
+  curse_of_brittleness:               # 124 脆弱诅咒 UNCOMMON ALL
+    # SCHEMA 无「耐久消耗翻倍」动作：用负值 DURABILITY 在攻击/挖掘时额外损耗近似
+    display: "&8脆弱诅咒"
+    tier: UNCOMMON
+    max-level: 1
+    types: [ALL]
+    description:
+      - "&7诅咒：使用该物品时额外消耗耐久"
+    triggers:
+      ON_HIT:
+        actions:
+          - type: DURABILITY
+            base: -1
+          - type: PARTICLE
+            particle: ASH
+            count: 4
+            spread: 0.3
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_ITEM_BREAK
+            volume: 0.25
+            pitch: 0.7
+      ON_BLOCK_BREAK:
+        actions:
+          - type: DURABILITY
+            base: -1

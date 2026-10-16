@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.advancedenchants</groupId>
+  <artifactId>AdvancedEnchants</artifactId>
+  <version>1.0.0</version>
+  <packaging>jar</packaging>
+  <name>AdvancedEnchants</name>
+  <description>配置驱动的自定义附魔引擎（Paper 1.20.4 ~ 1.21.x）</description>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>21</maven.compiler.release>
+    <!--
+      默认编译版本 = 1.20.4。
+      原因：1.20.4 的 API 是 1.21.x API 的子集（凡是 1.20.4 存在的类/方法，1.21.x 依然存在），
+      因此「用 1.20.4 编译、在 1.21.x 运行」是安全的；反过来编译则不行。
+      针对 1.21 才有的 API（Registry#register、setBasePotionType、Adventure 消息重载等），
+      代码统一走 util/VersionSafe 的反射适配层。
+      外网可用时可以直接切到 1.21.4：mvn -Ppaper-1.21.4 clean package
+    -->
+    <paper.version>1.20.4-R0.1-SNAPSHOT</paper.version>
+  </properties>
+
+  <repositories>
+    <repository>
+      <id>papermc-repo</id>
+      <url>https://repo.papermc.io/repository/maven-public/</url>
+    </repository>
+    <repository>
+      <id>aliyun-central</id>
+      <url>https://maven.aliyun.com/repository/central</url>
+    </repository>
+  </repositories>
+
+  <dependencies>
+    <!-- Paper API：provided，不打进插件包 -->
+    <dependency>
+      <groupId>io.papermc.paper</groupId>
+      <artifactId>paper-api</artifactId>
+      <version>${paper.version}</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>AdvancedEnchants-${project.version}</finalName>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+        <includes>
+          <include>plugin.yml</include>
+          <include>config.yml</include>
+          <include>enchants/**</include>
+        </includes>
+      </resource>
+    </resources>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+        <configuration>
+          <release>21</release>
+          <encoding>UTF-8</encoding>
+          <compilerArgs>
+            <arg>-Xlint:-deprecation,-removal</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.4.1</version>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <!-- 有外网时直接用目标版本编译（推荐在 1.21.x 服务器上发布时使用） -->
+    <profile>
+      <id>paper-1.21.4</id>
+      <properties>
+        <paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>
+      </properties>
+    </profile>
+    <profile>
+      <id>paper-1.21.1</id>
+      <properties>
+        <paper.version>1.21.1-R0.1-SNAPSHOT</paper.version>
+      </properties>
+    </profile>
+    <profile>
+      <id>paper-1.21.8</id>
+      <properties>
+        <paper.version>1.21.8-R0.1-SNAPSHOT</paper.version>
+      </properties>
+    </profile>
+  </profiles>
+</project>

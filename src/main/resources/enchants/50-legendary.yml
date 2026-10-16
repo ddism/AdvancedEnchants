@@ -1,0 +1,560 @@
+# AdvancedEnchants - 传说级附魔
+# 契约：docs/ENCHANT_ROSTER.md · 规范：docs/SCHEMA.md
+# tier=LEGENDARY，共 12 条：
+#   thunder_edge soul_eater vampiric_aura execute_axe poseidon_wrath soul_arrow
+#   divine_shield arcane_resistance life_link kraken_call phoenix_wing midas_touch
+enchants:
+  thunder_edge:
+    display: "&e雷刃"
+    tier: LEGENDARY
+    max-level: 3
+    types: [SWORD]
+    description:
+      - "&7命中时有 &f8%% &7(+4%%/级) 几率召唤闪电"
+      - "&7并附加麻痹"
+    conflicts: [eternal_blade]
+    triggers:
+      ON_HIT:
+        cooldown: 4.0
+        conditions:
+          - type: CHANCE
+            value: 8
+            per-level: 4
+          - type: Y
+            min: 0
+            max: 320
+        actions:
+          - type: LIGHTNING
+            base: 1.0
+            damage: false
+          - type: POTION
+            who: TARGET
+            potion: SLOWNESS
+            duration: 30
+            duration-per-level: 15
+            amplifier: 1
+          - type: PARTICLE
+            particle: ELECTRIC_SPARK
+            count: 20
+            spread: 0.6
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_LIGHTNING_BOLT_THUNDER
+            volume: 0.6
+            pitch: 1.4
+
+  soul_eater:
+    display: "&5噬魂"
+    tier: LEGENDARY
+    max-level: 3
+    types: [SWORD]
+    description:
+      - "&7击杀永久累积灵魂（每次 +&f{value}&7 层）"
+      - "&7每层提供 &f3%% &7伤害（上限 25 层，死亡减半）"
+    conflicts: [vampiric_aura]
+    triggers:
+      ON_KILL:
+        cooldown: 0.5
+        actions:
+          - type: SOULS
+            base: 1
+            per-level: 1
+            max: 3
+          - type: ACTIONBAR
+            value: "&5噬魂 +1 层"
+          - type: PARTICLE
+            particle: SOUL
+            count: 15
+            spread: 0.6
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_WITHER_HURT
+            volume: 0.5
+            pitch: 1.5
+      ON_HIT:
+        cooldown: 0
+        conditions:
+          - type: SOULS
+            value: 1
+        actions:
+          - type: DAMAGE_MULTIPLY
+            base: 1.03
+            per-level: 0.03
+            max: 1.75
+          - type: PARTICLE
+            particle: SOUL_FIRE_FLAME
+            count: 8
+            spread: 0.3
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_WITHER_SHOOT
+            volume: 0.3
+            pitch: 1.6
+
+  vampiric_aura:
+    display: "&4血族光环"
+    tier: LEGENDARY
+    max-level: 3
+    types: [SWORD]
+    description:
+      - "&7每秒持续汲取周围敌人生命，治疗自身与队友"
+      - "&7命中时将伤害的一部分转化为生命（每级提升）"
+    conflicts: [soul_eater]
+    triggers:
+      PASSIVE:
+        cooldown: 1.0
+        conditions:
+          - type: HEALTH
+            value: 0.95
+            mode: BELOW
+        actions:
+          - type: POTION
+            who: SELF
+            potion: REGENERATION
+            duration: 40
+            amplifier: 0
+          - type: PARTICLE
+            particle: HEART
+            count: 6
+            spread: 0.8
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_BEACON_ACTIVATE
+            volume: 0.3
+            pitch: 0.7
+      ON_HIT:
+        cooldown: 0.5
+        actions:
+          - type: LIFESTEAL
+            base: 0.03
+            per-level: 0.02
+            max: 0.15
+          - type: PARTICLE
+            particle: HEART
+            count: 4
+            spread: 0.3
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_WITCH_DRINK
+            volume: 0.3
+            pitch: 1.2
+
+  execute_axe:
+    display: "&c断头台"
+    tier: LEGENDARY
+    max-level: 3
+    types: [AXE]
+    description:
+      - "&7处决阈值提升至 &f{value} &7（生命比例）"
+      - "&7对低于该阈值的目标造成额外伤害"
+    conflicts: [berserker]
+    triggers:
+      ON_HIT:
+        cooldown: 1.5
+        conditions:
+          - type: TARGET_HEALTH
+            value: 0.35
+            mode: BELOW
+        actions:
+          - type: EXECUTE
+            base: 0.35
+            per-level: 0.05
+            damage: 8.0
+          - type: TRUE_DAMAGE
+            base: 2
+            per-level: 1
+            max: 8
+          - type: PARTICLE
+            particle: CRIT
+            count: 12
+            spread: 0.5
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_PLAYER_ATTACK_CRIT
+            volume: 0.8
+            pitch: 1.2
+
+  poseidon_wrath:
+    display: "&3海皇之怒"
+    tier: LEGENDARY
+    max-level: 3
+    types: [TRIDENT]
+    description:
+      - "&7命中引发半径 &f{value} &7的范围水爆并击退"
+      - "&7雨天时威力与触发几率显著提升"
+    conflicts: [abyss_hunter]
+    triggers:
+      ON_HIT:
+        cooldown: 6.0
+        conditions:
+          - type: CHANCE
+            value: 15
+            per-level: 5
+        actions:
+          - type: EXPLOSION
+            base: 2.0
+            per-level: 0.5
+            max: 3.5
+            set-fire: false
+            break-blocks: false
+          - type: KNOCKBACK
+            base: 1.2
+            per-level: 0.3
+            who: TARGET
+          - type: POTION
+            who: TARGET
+            potion: SLOWNESS
+            duration: 40
+            duration-per-level: 10
+            amplifier: 1
+          - type: PARTICLE
+            particle: SPLASH
+            count: 40
+            spread: 1.0
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_GENERIC_SPLASH
+            volume: 1.0
+            pitch: 0.8
+      ON_PROJECTILE_HIT:
+        cooldown: 8.0
+        conditions:
+          - type: CHANCE
+            value: 25
+            per-level: 5
+          - type: IN_RAIN
+            value: true
+        actions:
+          - type: EXPLOSION
+            base: 3.0
+            set-fire: false
+            break-blocks: false
+          - type: POTION
+            who: TARGET
+            potion: SLOWNESS
+            duration: 60
+            amplifier: 1
+          - type: PARTICLE
+            particle: CLOUD
+            count: 50
+            spread: 1.2
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_LIGHTNING_BOLT_IMPACT
+            volume: 1.0
+            pitch: 0.9
+
+  soul_arrow:
+    display: "&5灵魂箭"
+    tier: LEGENDARY
+    max-level: 3
+    types: [BOW]
+    description:
+      - "&7命中吸取目标生命并提供短暂抗性提升"
+      - "&7每次命中汲取更多生命（每级提升）"
+    conflicts: [homing_arrow]
+    triggers:
+      ON_PROJECTILE_HIT:
+        cooldown: 2.0
+        conditions:
+          - type: CHANCE
+            value: 25
+            per-level: 10
+        actions:
+          - type: LIFESTEAL
+            base: 0.15
+            per-level: 0.05
+            max: 0.4
+          - type: POTION
+            who: SELF
+            potion: DAMAGE_RESISTANCE
+            duration: 60
+            duration-per-level: 20
+            amplifier: 0
+          - type: PARTICLE
+            particle: SOUL
+            count: 20
+            spread: 0.5
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_WITHER_SHOOT
+            volume: 0.5
+            pitch: 1.5
+
+  divine_shield:
+    display: "&b神圣壁垒"
+    tier: LEGENDARY
+    max-level: 4
+    types: [ARMOR]
+    description:
+      - "&7周期性生成可吸收伤害的护盾"
+      - "&7护盾强度随等级提升"
+    conflicts: [second_wind]
+    triggers:
+      PASSIVE:
+        cooldown: 30.0
+        conditions:
+          - type: HEALTH
+            value: 0.9
+            mode: BELOW
+        actions:
+          - type: POTION
+            who: SELF
+            potion: ABSORPTION
+            duration: 160
+            duration-per-level: 40
+            amplifier: 1
+            amplifier-per-level: 1
+          - type: PARTICLE
+            particle: END_ROD
+            count: 25
+            spread: 0.8
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_BEACON_ACTIVATE
+            volume: 0.6
+            pitch: 1.2
+
+  arcane_resistance:
+    display: "&d秘法抗性"
+    tier: LEGENDARY
+    max-level: 3
+    types: [ARMOR]
+    description:
+      - "&7受到伤害时减免 &f{value} &7比例（每级提升）"
+      - "&7并反弹部分法术伤害给攻击者"
+    conflicts: [elemental_ward]
+    triggers:
+      ON_DAMAGED:
+        cooldown: 2.0
+        conditions:
+          - type: CHANCE
+            value: 30
+            per-level: 10
+        actions:
+          - type: DAMAGE_REDUCE
+            base: 0.25
+            per-level: 0.05
+            max: 0.5
+          - type: REFLECT
+            base: 0.1
+            per-level: 0.05
+            max: 0.3
+          - type: PARTICLE
+            particle: ENCHANT
+            count: 18
+            spread: 0.7
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_ENCHANTMENT_TABLE_USE
+            volume: 0.6
+            pitch: 1.6
+
+  life_link:
+    display: "&a生命链接"
+    tier: LEGENDARY
+    max-level: 3
+    types: [ARMOR]
+    description:
+      - "&7将部分伤害分摊出去，并为附近队友提升回血"
+      - "&7自身生命越低，分摊效果越强"
+    conflicts: [guardian_angel]
+    triggers:
+      PASSIVE:
+        cooldown: 5.0
+        conditions:
+          - type: HEALTH
+            value: 0.3
+            mode: ABOVE
+        actions:
+          - type: POTION
+            who: SELF
+            potion: REGENERATION
+            duration: 40
+            duration-per-level: 20
+            amplifier: 0
+          - type: PARTICLE
+            particle: HEART
+            count: 8
+            spread: 0.6
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_CONDUIT_ACTIVATE
+            volume: 0.4
+            pitch: 1.4
+      ON_DAMAGED:
+        cooldown: 1.0
+        actions:
+          - type: DAMAGE_REDUCE
+            base: 0.1
+            per-level: 0.05
+            max: 0.3
+          - type: PARTICLE
+            particle: VILLAGER_HAPPY
+            count: 10
+            spread: 0.9
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_BEACON_POWER_SELECT
+            volume: 0.4
+            pitch: 1.8
+
+  kraken_call:
+    display: "&9海怪呼唤"
+    tier: LEGENDARY
+    max-level: 2
+    types: [FISHING_ROD]
+    description:
+      - "&7低概率钓出海怪（1~2 只，随等级提升）"
+      - "&7击杀海怪可获得高额渔获奖励"
+    conflicts: [master_angler]
+    triggers:
+      ON_FISH:
+        cooldown: 30.0
+        conditions:
+          - type: CHANCE
+            value: 3
+            per-level: 2
+        actions:
+          - type: SUMMON
+            entity: DROWNED
+            count: 1
+            count-per-level: 1
+            lifetime: 200
+          - type: MESSAGE
+            value: "&9海怪被你的渔线唤醒了！"
+            who: SELF
+          - type: PARTICLE
+            particle: SPLASH
+            count: 60
+            spread: 1.5
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_ELDER_GUARDIAN_CURSE
+            volume: 1.0
+            pitch: 0.6
+      ON_KILL:
+        cooldown: 1.0
+        conditions:
+          - type: TARGET_TYPE
+            value: [DROWNED]
+        actions:
+          - type: MULTIPLY_DROP
+            base: 3
+            per-level: 1
+            max: 6
+          - type: PARTICLE
+            particle: BUBBLE_POP
+            count: 30
+            spread: 1.0
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_FISHING_BOBBER_SPLASH
+            volume: 1.0
+            pitch: 1.2
+
+  phoenix_wing:
+    display: "&6不死鸟之翼"
+    tier: LEGENDARY
+    max-level: 1
+    types: [ELYTRA]
+    description:
+      - "&7高空坠落时自动展开滑翔并免疫落地伤害"
+      - "&7落地时爆发不死鸟火焰特效"
+    conflicts: [cloud_walker]
+    triggers:
+      PASSIVE:
+        cooldown: 1.0
+        conditions:
+          - type: ON_GROUND
+            value: false
+        actions:
+          - type: POTION
+            who: SELF
+            potion: SLOW_FALLING
+            duration: 40
+            amplifier: 0
+          - type: PARTICLE
+            particle: FLAME
+            count: 6
+            spread: 0.5
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_PHANTOM_FLAP
+            volume: 0.3
+            pitch: 0.9
+      ON_FALL_DAMAGE:
+        cooldown: 20.0
+        actions:
+          - type: DAMAGE_REDUCE
+            base: 1.0
+          - type: POTION
+            who: SELF
+            potion: SLOW_FALLING
+            duration: 100
+            amplifier: 0
+          - type: PARTICLE
+            particle: FLAME
+            count: 30
+            spread: 1.0
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_ENDER_DRAGON_FLAP
+            volume: 0.8
+            pitch: 0.8
+
+  midas_touch:
+    display: "&6点石成金"
+    tier: LEGENDARY
+    max-level: 3
+    types: [ALL]
+    description:
+      - "&7掉落物有 &f{value} &7概率转化为金锭"
+      - "&7并额外增加掉落数量"
+    conflicts: [fortunes_favor]
+    triggers:
+      ON_LOOT:
+        cooldown: 1.0
+        conditions:
+          - type: CHANCE
+            value: 10
+            per-level: 5
+        actions:
+          - type: CONVERT_DROP
+            base: 0.35
+            per-level: 0.15
+            max: 0.75
+            material: GOLD_INGOT
+          - type: MULTIPLY_DROP
+            base: 1.2
+            per-level: 0.2
+            max: 2.0
+          - type: PARTICLE
+            particle: VILLAGER_HAPPY
+            count: 10
+            spread: 0.6
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_EXPERIENCE_ORB_PICKUP
+            volume: 0.6
+            pitch: 1.6
+      ON_KILL:
+        cooldown: 1.0
+        conditions:
+          - type: CHANCE
+            value: 8
+            per-level: 4
+        actions:
+          - type: MULTIPLY_DROP
+            base: 1.5
+            per-level: 0.25
+            max: 2.5
+          - type: PARTICLE
+            particle: CRIT
+            count: 12
+            spread: 0.5
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_PLAYER_LEVELUP
+            volume: 0.5
+            pitch: 1.8

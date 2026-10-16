@@ -1,0 +1,688 @@
+# AdvancedEnchants - 史诗级附魔
+# 与 docs/ENCHANT_ROSTER.md 一一对应（tier=EPIC，共 19 条）
+enchants:
+  blade_dance:
+    display: "&5剑舞"
+    tier: EPIC
+    max-level: 3
+    types: [SWORD]
+    description:
+      - "&7命中后 3 秒内获得急速（攻速提升）"
+      - "&8最高等效 &f+20%%/级 &8攻速，连续命中可续接"
+    triggers:
+      ON_HIT:
+        cooldown: 0.5
+        actions:
+          - type: POTION
+            who: SELF
+            potion: FAST_DIGGING
+            duration: 3
+            duration-per-level: 1
+            amplifier: 0
+            amplifier-per-level: 1
+          - type: PARTICLE
+            particle: SWEEP_ATTACK
+            count: 6
+            spread: 0.4
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_PLAYER_ATTACK_SWEEP
+            volume: 0.5
+            pitch: 1.6
+
+  phantom_strike:
+    display: "&5幻影打击"
+    tier: EPIC
+    max-level: 3
+    types: [SWORD]
+    description:
+      - "&7命中时有 &f10%%+5%%/级 &7几率造成 &f{value} &7点真实伤害"
+      - "&8真实伤害无视护甲"
+    triggers:
+      ON_HIT:
+        cooldown: 0.5
+        conditions:
+          - type: CHANCE
+            value: 10
+            per-level: 5
+        actions:
+          - type: TRUE_DAMAGE
+            base: 2.0
+            per-level: 1.5
+            max: 8.0
+          - type: PARTICLE
+            particle: ENCHANTED_HIT
+            count: 12
+            spread: 0.5
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_PLAYER_ATTACK_CRIT
+            volume: 0.5
+            pitch: 1.8
+
+  hemorrhage:
+    display: "&5裂伤"
+    tier: EPIC
+    max-level: 3
+    types: [SWORD]
+    description:
+      - "&7命中使目标持续流血（不致死）"
+      - "&8中毒类持续伤害近似：等级越高流血越重"
+    triggers:
+      ON_HIT:
+        cooldown: 1.0
+        conditions:
+          - type: CHANCE
+            value: 40
+            per-level: 15
+        actions:
+          - type: POTION
+            who: TARGET
+            potion: POISON
+            duration: 4
+            duration-per-level: 1
+            amplifier: 0
+            amplifier-per-level: 1
+          - type: PARTICLE
+            particle: DAMAGE_INDICATOR
+            count: 10
+            spread: 0.4
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_PLAYER_HURT
+            volume: 0.4
+            pitch: 0.8
+
+  war_cry:
+    display: "&5战吼"
+    tier: EPIC
+    max-level: 3
+    types: [AXE]
+    description:
+      - "&7右键发出战吼，周围 &f4 &7格内敌人陷入虚弱"
+      - "&7自身获得速度提升，冷却 &f15 &7秒"
+    triggers:
+      ON_INTERACT:
+        cooldown: 15.0
+        actions:
+          - type: POTION_CLOUD
+            potion: WEAKNESS
+            duration: 5
+            duration-per-level: 2
+            radius: 4
+            amplifier: 1
+            amplifier-per-level: 1
+          - type: POTION
+            who: SELF
+            potion: SPEED
+            duration: 5
+            duration-per-level: 2
+            amplifier: 0
+            amplifier-per-level: 1
+          - type: PARTICLE
+            particle: CLOUD
+            count: 30
+            spread: 1.2
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_ENDER_DRAGON_GROWL
+            volume: 0.7
+            pitch: 1.2
+
+  butcher_cleave:
+    display: "&5屠戮"
+    tier: EPIC
+    max-level: 3
+    types: [AXE]
+    description:
+      - "&7命中伤害 ×&f{value}"
+      - "&7对周围 3 格内敌人造成溅射，对生物额外加成"
+    triggers:
+      ON_HIT:
+        cooldown: 0.4
+        actions:
+          - type: DAMAGE_MULTIPLY
+            base: 1.10
+            per-level: 0.05
+            max: 1.30
+          - type: SHOCKWAVE
+            radius: 3
+            damage: 2.0
+            knockback: 0.3
+          - type: PARTICLE
+            particle: SWEEP_ATTACK
+            count: 14
+            spread: 0.9
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_PLAYER_ATTACK_SWEEP
+            volume: 0.8
+            pitch: 0.7
+
+  abyss_hunter:
+    display: "&5深渊猎手"
+    tier: EPIC
+    max-level: 3
+    types: [TRIDENT]
+    description:
+      - "&7水中对目标伤害 ×&f{value} &7（+30%%/级）"
+      - "&8附加缓慢与气泡特效"
+    triggers:
+      ON_HIT:
+        cooldown: 0.5
+        conditions:
+          - type: IN_WATER
+            value: true
+        actions:
+          - type: DAMAGE_MULTIPLY
+            base: 1.30
+            per-level: 0.30
+            max: 2.20
+          - type: POTION
+            who: TARGET
+            potion: SLOWNESS
+            duration: 3
+            duration-per-level: 1
+            amplifier: 0
+            amplifier-per-level: 1
+          - type: PARTICLE
+            particle: CLOUD
+            count: 20
+            spread: 0.6
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_ELDER_GUARDIAN_CURSE
+            volume: 0.4
+            pitch: 1.5
+
+  sniper:
+    display: "&5狙击手"
+    tier: EPIC
+    max-level: 3
+    types: [BOW, CROSSBOW]
+    description:
+      - "&712 格以外命中时伤害 ×&f{value}"
+      - "&8距离越远，暴击收益越高"
+    triggers:
+      ON_PROJECTILE_HIT:
+        cooldown: 0.3
+        conditions:
+          - type: PROJECTILE_DISTANCE
+            min: 12
+            per-level: 4
+        actions:
+          - type: DAMAGE_MULTIPLY
+            base: 1.40
+            per-level: 0.20
+            max: 2.00
+          - type: PARTICLE
+            particle: CRIT
+            count: 15
+            spread: 0.5
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_PLAYER_ATTACK_CRIT
+            volume: 0.6
+            pitch: 1.6
+
+  homing_arrow:
+    display: "&5追踪箭"
+    tier: EPIC
+    max-level: 3
+    types: [BOW]
+    description:
+      - "&7命中额外造成 &f{value} &7倍追踪伤害"
+      - "&8箭矢飞行中自动修正弹道，追踪最近的敌人"
+    triggers:
+      ON_PROJECTILE_HIT:
+        cooldown: 0.2
+        actions:
+          - type: DAMAGE_MULTIPLY
+            base: 1.15
+            per-level: 0.05
+            max: 1.30
+          - type: PARTICLE
+            particle: ENCHANTED_HIT
+            count: 12
+            spread: 0.4
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_ARROW_HIT
+            volume: 0.5
+            pitch: 1.5
+      ON_SHOOT:
+        cooldown: 0.2
+        actions:
+          - type: PARTICLE
+            particle: END_ROD
+            count: 6
+            spread: 0.2
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_ARROW_SHOOT
+            volume: 0.4
+            pitch: 1.4
+
+  arrow_rain:
+    display: "&5箭雨"
+    tier: EPIC
+    max-level: 3
+    types: [BOW]
+    description:
+      - "&7命中后原地落下小型箭雨（&f12 &7支 · 半径 3）"
+      - "&8冷却 &f12 &8秒，箭雨不破坏地形"
+    triggers:
+      ON_PROJECTILE_HIT:
+        cooldown: 12.0
+        conditions:
+          - type: PROJECTILE_DISTANCE
+            min: 8
+        actions:
+          - type: ARROW_RAIN
+            count: 12
+            count-per-level: 4
+            radius: 3
+            speed: 1.2
+            damage: 3.0
+          - type: PARTICLE
+            particle: CLOUD
+            count: 25
+            spread: 1.5
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_ARROW_SHOOT
+            volume: 0.8
+            pitch: 0.8
+
+  retribution:
+    display: "&5反伤甲"
+    tier: EPIC
+    max-level: 3
+    types: [ARMOR]
+    description:
+      - "&7受击后对攻击者造成 &f{value} &7倍攻击力的真实反伤"
+      - "&8反伤无视护甲"
+    triggers:
+      ON_DAMAGED:
+        cooldown: 1.0
+        actions:
+          - type: REFLECT
+            base: 0.15
+            per-level: 0.15
+            max: 0.60
+          - type: PARTICLE
+            particle: ENCHANTED_HIT
+            count: 10
+            spread: 0.5
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_ANVIL_LAND
+            volume: 0.4
+            pitch: 1.8
+
+  juggernaut:
+    display: "&5势不可挡"
+    tier: EPIC
+    max-level: 3
+    types: [ARMOR]
+    description:
+      - "&7受击时获得 &f{value} &7减伤与抗性提升（抗击退）"
+      - "&8连续受击时效果叠加更强"
+    triggers:
+      ON_DAMAGED:
+        cooldown: 0.5
+        actions:
+          - type: DAMAGE_REDUCE
+            base: 0.06
+            per-level: 0.04
+            max: 0.20
+          - type: POTION
+            who: SELF
+            potion: RESISTANCE
+            duration: 3
+            duration-per-level: 1
+            amplifier: 0
+          - type: PARTICLE
+            particle: ENCHANTED_HIT
+            count: 8
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_ANVIL_LAND
+            volume: 0.3
+            pitch: 0.7
+
+  phoenix_feather:
+    display: "&5不死鸟之羽"
+    tier: EPIC
+    max-level: 3
+    types: [ARMOR]
+    description:
+      - "&7致命伤时以 &f5 &7颗心复活并获得 3 秒无敌"
+      - "&8复活瞬间以火焰冲击灼烧周围敌人（不破坏地形），每场战斗一次"
+    triggers:
+      ON_DEATH:
+        cooldown: 300.0
+        actions:
+          - type: SURVIVE
+            health: 5
+            invulnerable: 3
+          - type: EXPLOSION
+            base: 3.0
+            per-level: 0.5
+            max: 5.0
+            set-fire: false
+            break-blocks: false
+          - type: PARTICLE
+            particle: FLAME
+            count: 40
+            spread: 1.5
+            who: SELF
+          - type: SOUND
+            sound: ITEM_TOTEM_USE
+            volume: 1.0
+            pitch: 1.0
+
+  undying_will:
+    display: "&5不屈意志"
+    tier: EPIC
+    max-level: 3
+    types: [ARMOR]
+    description:
+      - "&7生命低于 &f60%% &7时持续获得 &f{value} &7减伤"
+      - "&8濒死时额外获得抗性提升"
+    triggers:
+      PASSIVE:
+        cooldown: 1.0
+        conditions:
+          - type: HEALTH
+            value: 0.60
+            per-level: 0.05
+            mode: BELOW
+        actions:
+          - type: DAMAGE_REDUCE
+            base: 0.10
+            per-level: 0.05
+            max: 0.30
+          - type: POTION
+            who: SELF
+            potion: RESISTANCE
+            duration: 2
+            duration-per-level: 1
+            amplifier: 0
+          - type: PARTICLE
+            particle: HEART
+            count: 3
+            who: SELF
+      ON_DAMAGED:
+        cooldown: 0.5
+        conditions:
+          - type: HEALTH
+            value: 0.30
+            mode: BELOW
+        actions:
+          - type: DAMAGE_REDUCE
+            base: 0.15
+            per-level: 0.05
+            max: 0.35
+          - type: SOUND
+            sound: ENTITY_PLAYER_HURT
+            volume: 0.4
+            pitch: 0.6
+
+  gravity_digger:
+    display: "&5重力挖掘"
+    tier: EPIC
+    max-level: 3
+    types: [PICKAXE]
+    description:
+      - "&7挖掘时一并破坏上方 &f{value} &7格方块"
+      - "&8范围有限，沙砾会坠落"
+    triggers:
+      ON_BLOCK_BREAK:
+        cooldown: 0.5
+        conditions:
+          - type: BLOCK
+            value: ["*_ORE", "*_DEEPSLATE", "STONE", "GRAVEL", "SAND", "DIRT", "NETHERRACK"]
+        actions:
+          - type: VEIN_MINE
+            radius: 2
+            limit: 24
+            drops: true
+            same-type: true
+          - type: PARTICLE
+            particle: BLOCK
+            count: 12
+            who: BLOCK
+          - type: SOUND
+            sound: BLOCK_GRAVEL_BREAK
+            volume: 0.6
+            pitch: 0.8
+
+  vein_apocalypse:
+    display: "&5矿脉浩劫"
+    tier: EPIC
+    max-level: 3
+    types: [PICKAXE]
+    description:
+      - "&7大范围连锁采矿（半径 3 · 上限 32 块）"
+      - "&8被连锁破坏的方块只有 &f50%% &8掉落，冷却 &f6 &8秒"
+    triggers:
+      ON_BLOCK_BREAK:
+        cooldown: 6.0
+        conditions:
+          - type: BLOCK
+            value: ["*_ORE"]
+        actions:
+          - type: VEIN_MINE
+            radius: 3
+            limit: 32
+            drops: true
+            same-type: true
+          - type: MULTIPLY_DROP
+            base: 0.5
+            max: 0.5
+          - type: PARTICLE
+            particle: BLOCK
+            count: 20
+            who: BLOCK
+          - type: SOUND
+            sound: ENTITY_GENERIC_EXPLODE
+            volume: 0.4
+            pitch: 0.6
+
+  master_angler:
+    display: "&5渔王"
+    tier: EPIC
+    max-level: 3
+    types: [FISHING_ROD]
+    description:
+      - "&7渔获数量提升至 &f{value} &7倍"
+      - "&8并有几率将渔获升级为珍宝"
+    triggers:
+      ON_FISH:
+        cooldown: 0.5
+        actions:
+          - type: MULTIPLY_DROP
+            base: 2.0
+            per-level: 0.5
+            max: 4.0
+          - type: CONVERT_DROP
+            base: 0.05
+            per-level: 0.03
+            material: DIAMOND
+          - type: PARTICLE
+            particle: CLOUD
+            count: 15
+            spread: 0.8
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_FISHING_BOBBER_RETRIEVE
+            volume: 0.6
+            pitch: 1.2
+
+  cloud_walker:
+    display: "&5踏云者"
+    tier: EPIC
+    max-level: 3
+    types: [ELYTRA]
+    description:
+      - "&7滑翔中右键获得 &f{value} &7的向上推力（二段拉升）"
+      - "&8并短暂悬浮（缓降），冷却 &f3 &8秒"
+    triggers:
+      ON_INTERACT:
+        cooldown: 3.0
+        conditions:
+          - type: ON_GROUND
+            value: false
+        actions:
+          - type: LAUNCH
+            base: 0.6
+            per-level: 0.2
+            max: 1.4
+            who: SELF
+          - type: POTION
+            who: SELF
+            potion: SLOW_FALLING
+            duration: 3
+            duration-per-level: 1
+            amplifier: 0
+          - type: PARTICLE
+            particle: CLOUD
+            count: 20
+            spread: 0.6
+            who: SELF
+          - type: SOUND
+            sound: ITEM_ELYTRA_FLYING
+            volume: 0.6
+            pitch: 1.2
+
+  sky_terror:
+    display: "&5空域霸主"
+    tier: EPIC
+    max-level: 3
+    types: [ELYTRA]
+    description:
+      - "&7空中攻击伤害 ×&f{value}"
+      - "&8并击退目标"
+    triggers:
+      ON_HIT:
+        cooldown: 0.4
+        conditions:
+          - type: ON_GROUND
+            value: false
+        actions:
+          - type: DAMAGE_MULTIPLY
+            base: 1.25
+            per-level: 0.15
+            max: 1.70
+          - type: KNOCKBACK
+            base: 0.6
+            per-level: 0.2
+            max: 1.4
+            who: TARGET
+          - type: PARTICLE
+            particle: SWEEP_ATTACK
+            count: 10
+            spread: 0.5
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_WITHER_SHOOT
+            volume: 0.4
+            pitch: 1.5
+
+  glass_cannon:
+    display: "&5玻璃大炮"
+    tier: EPIC
+    max-level: 3
+    types: [ALL]
+    description:
+      - "&7造成伤害 ×&f{value}"
+      - "&8自身受到的伤害增加（高攻低防）"
+    triggers:
+      ON_HIT:
+        cooldown: 0.2
+        actions:
+          - type: DAMAGE_MULTIPLY
+            base: 1.25
+            per-level: 0.15
+            max: 1.70
+          - type: PARTICLE
+            particle: CRIT
+            count: 8
+            spread: 0.4
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_PLAYER_ATTACK_CRIT
+            volume: 0.4
+            pitch: 1.9
+      ON_DAMAGED:
+        cooldown: 0.2
+        actions:
+          - type: DAMAGE_ADD
+            base: 0.3
+            per-level: 0.15
+            max: 0.8
+          - type: PARTICLE
+            particle: CRIT
+            count: 6
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_GLASS_BREAK
+            volume: 0.5
+            pitch: 1.4
+
+  arcane_barrier:
+    display: "&5秘法屏障"
+    tier: EPIC
+    max-level: 3
+    types: [ARMOR]
+    description:
+      - "&7每 5 点灵魂提供 &f{value}%% &7伤害吸收"
+    triggers:
+      ON_DAMAGED:
+        cooldown: 0
+        conditions:
+          - type: SOULS
+            value: 5
+        actions:
+          - type: DAMAGE_REDUCE
+            base: 0.08
+            per-level: 0.04
+            max: 0.3
+          - type: SOULS
+            base: -1
+          - type: PARTICLE
+            particle: ENCHANT
+            count: 10
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_ENCHANTMENT_TABLE_USE
+            volume: 0.5
+            pitch: 1.2
+
+  soul_siphon:
+    display: "&5灵魂虹吸"
+    tier: EPIC
+    max-level: 3
+    types: [SWORD, ALL]
+    description:
+      - "&7击杀时窃取灵魂，回复 &f{value} &7点生命"
+    triggers:
+      ON_KILL:
+        cooldown: 1.0
+        actions:
+          - type: SOULS
+            base: 3
+            per-level: 2
+          - type: HEAL
+            base: 1.0
+            per-level: 0.5
+            max: 3.0
+          - type: PARTICLE
+            particle: SOUL
+            count: 8
+            who: TARGET
+          - type: SOUND
+            sound: PARTICLE_SOUL_ESCAPE
+            volume: 0.5
+            pitch: 1.0

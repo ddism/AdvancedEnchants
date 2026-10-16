@@ -1,0 +1,19 @@
+# 构建与运行产物
+target/
+*.class
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# 本地校验用的依赖（体积大，可随时重新下载）
+.verify-libs/
+
+# 系统
+Thumbs.db
+.DS_Store

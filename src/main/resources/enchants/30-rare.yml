@@ -1,0 +1,1000 @@
+# AdvancedEnchants - 稀有级附魔
+# 契约: docs/ENCHANT_ROSTER.md (ID/tier/types 逐字对应) + docs/SCHEMA.md (唯一合法写法)
+# 本文件覆盖 roster 中全部 tier=RARE 条目（29 条）。
+# 约定: description 中的 %% 为百分号转义; {value} = 第一个 action 在当前等级下的数值。
+enchants:
+  mending_strike:
+    display: "&a汲取打击"
+    tier: RARE
+    max-level: 3
+    types: [SWORD]
+    description:
+      - "&7命中时汲取敌人的生命能量，回复武器耐久 &f{value} &7点"
+      - "&8等级越高每次回复越多"
+    triggers:
+      ON_HIT:
+        cooldown: 0.5
+        actions:
+          - type: DURABILITY
+            base: 2
+            per-level: 2
+            max: 6
+          - type: PARTICLE
+            particle: ENCHANTED_HIT
+            count: 5
+            spread: 0.4
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_GRINDSTONE_USE
+            volume: 0.4
+            pitch: 1.6
+
+  soul_harvest:
+    display: "&5灵魂收割"
+    tier: RARE
+    max-level: 3
+    types: [SWORD]
+    description:
+      - "&7击杀敌人时收割 &f{value} &7个灵魂"
+      - "&7每积累 &f5 &7个灵魂，命中伤害提升 &f1%% &7（上限 &f12%%&7）"
+    triggers:
+      ON_KILL:
+        cooldown: 0
+        actions:
+          - type: SOULS
+            base: 1
+            per-level: 1
+            max: 3
+          - type: PARTICLE
+            particle: SOUL
+            count: 10
+            spread: 0.6
+            who: TARGET
+          - type: SOUND
+            sound: BLOCK_SOUL_SAND_BREAK
+            volume: 0.5
+            pitch: 0.8
+      ON_HIT:
+        cooldown: 0
+        conditions:
+          - type: SOULS
+            value: 5
+            per-level: 5
+        actions:
+          - type: DAMAGE_MULTIPLY
+            base: 1.01
+            per-level: 0.01
+            max: 1.12
+          - type: PARTICLE
+            particle: SOUL
+            count: 4
+            spread: 0.3
+            who: TARGET
+
+  berserker:
+    display: "&c狂战士"
+    tier: RARE
+    max-level: 3
+    types: [SWORD, AXE]
+    description:
+      - "&7生命值低于 &f50%% &7时进入狂暴，伤害 ×&f{value}"
+      - "&7生命越低加成越高，最多 &f+30%%/级"
+    triggers:
+      ON_HIT:
+        cooldown: 0
+        conditions:
+          - type: HEALTH
+            value: 0.5
+            per-level: 0.05
+            mode: BELOW
+        actions:
+          - type: DAMAGE_MULTIPLY
+            base: 1.3
+            per-level: 0.3
+            max: 1.9
+          - type: PARTICLE
+            particle: CRIT
+            count: 8
+            spread: 0.5
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_PLAYER_ATTACK_CRIT
+            volume: 0.6
+            pitch: 0.9
+
+  cleave:
+    display: "&6横扫"
+    tier: RARE
+    max-level: 3
+    types: [SWORD, AXE]
+    description:
+      - "&7命中时对周围 &f2 &7格内的其他敌人造成溅射伤害"
+      - "&7溅射强度 &f40%% &7（每级 &f+15%%&7），不破坏地形"
+    triggers:
+      ON_HIT:
+        cooldown: 0.5
+        actions:
+          # SCHEMA 缺口: SHOCKWAVE 仅文档化了 radius/damage/knockback，
+          # 等级缩放借用通用 base/per-level/max，damage 为溅射比例。
+          - type: SHOCKWAVE
+            radius: 2.0
+            damage: 0.4
+            knockback: 0.15
+            base: 0.4
+            per-level: 0.15
+            max: 0.75
+          - type: PARTICLE
+            particle: SWEEP_ATTACK
+            count: 4
+            spread: 1.2
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_PLAYER_ATTACK_SWEEP
+            volume: 0.7
+            pitch: 1.0
+
+  parry:
+    display: "&b招架"
+    tier: RARE
+    max-level: 3
+    types: [SWORD]
+    description:
+      - "&7受到攻击时有 &f10%%/级 &7概率招架"
+      - "&7招架时减免 &f{value} &7比例伤害并反击攻击者"
+    triggers:
+      ON_DAMAGED:
+        cooldown: 1.0
+        conditions:
+          - type: CHANCE
+            value: 10
+            per-level: 10
+        actions:
+          - type: DAMAGE_REDUCE
+            base: 0.6
+            per-level: 0.05
+            max: 0.75
+          - type: REFLECT
+            base: 0.3
+            per-level: 0.15
+            max: 0.6
+          - type: PARTICLE
+            particle: ENCHANTED_HIT
+            count: 12
+            spread: 0.6
+            who: SELF
+          - type: SOUND
+            sound: ITEM_SHIELD_BLOCK
+            volume: 0.8
+            pitch: 1.2
+
+  shatter:
+    display: "&8碎甲"
+    tier: RARE
+    max-level: 4
+    types: [AXE]
+    description:
+      - "&7命中时摧毁目标 &f{value} &7点护甲耐久"
+      - "&7并使目标受到的伤害提升 &f5%% &7（每级 &f+3%%&7）"
+    triggers:
+      ON_HIT:
+        cooldown: 1.0
+        actions:
+          - type: ARMOR_DAMAGE
+            base: 5
+            per-level: 5
+            max: 20
+          # SCHEMA 缺口: 无「降低目标减伤等级」动作，用 MARK 易伤近似。
+          - type: MARK
+            base: 0.05
+            per-level: 0.03
+            max: 0.14
+            duration: 5
+            duration-per-level: 2
+          - type: PARTICLE
+            particle: CRIT
+            count: 10
+            spread: 0.5
+            who: TARGET
+          - type: SOUND
+            sound: BLOCK_ANVIL_LAND
+            volume: 0.6
+            pitch: 1.4
+
+  crushing_blow:
+    display: "&4碎骨重击"
+    tier: RARE
+    max-level: 3
+    types: [AXE]
+    description:
+      - "&7无视目标 &f{value} &7比例的护甲减伤"
+      - "&7并额外造成 &f5%% &7（每级 &f+5%%&7）伤害"
+    triggers:
+      ON_HIT:
+        cooldown: 0.5
+        actions:
+          - type: ARMOR_PIERCE
+            base: 0.15
+            per-level: 0.1
+            max: 0.45
+          - type: DAMAGE_MULTIPLY
+            base: 1.05
+            per-level: 0.05
+            max: 1.25
+          - type: PARTICLE
+            particle: CRIT
+            count: 6
+            spread: 0.4
+            who: TARGET
+          - type: SOUND
+            sound: BLOCK_ANVIL_LAND
+            volume: 0.5
+            pitch: 0.8
+
+  riptide_master:
+    display: "&3激流掌控"
+    tier: RARE
+    max-level: 3
+    types: [TRIDENT]
+    description:
+      - "&7激流突进命中时伤害 ×&f{value}"
+      - "&7并降低突进的耐久消耗（近似：命中后小幅修复）"
+    triggers:
+      ON_HIT:
+        cooldown: 0.5
+        conditions:
+          - type: HAS_ENCHANT
+            value: "riptide"
+            min-level: 1
+        actions:
+          - type: DAMAGE_MULTIPLY
+            base: 1.15
+            per-level: 0.15
+            max: 1.6
+          - type: DURABILITY
+            base: 1
+            per-level: 0.5
+            max: 3
+          - type: PARTICLE
+            particle: SPLASH
+            count: 15
+            spread: 0.6
+            who: SELF
+          - type: SOUND
+            sound: ITEM_TRIDENT_RIPTIDE_3
+            volume: 0.8
+            pitch: 1.0
+
+  explosive_arrow:
+    display: "&c爆裂箭"
+    tier: RARE
+    max-level: 3
+    types: [BOW, CROSSBOW]
+    description:
+      - "&7命中时产生半径 &f{value} &7格的爆炸"
+      - "&8不破坏地形"
+    triggers:
+      ON_PROJECTILE_HIT:
+        cooldown: 2.5
+        actions:
+          - type: EXPLOSION
+            base: 1.5
+            per-level: 0.5
+            max: 3.0
+            set-fire: false
+            break-blocks: false
+          - type: PARTICLE
+            particle: EXPLOSION
+            count: 1
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_GENERIC_EXPLODE
+            volume: 0.7
+            pitch: 1.2
+
+  grappling_arrow:
+    display: "&a钩索箭"
+    tier: RARE
+    max-level: 3
+    types: [BOW, CROSSBOW]
+    description:
+      - "&7箭矢命中方块时将你拉向落点"
+      - "&7可位移距离随附魔等级提升（当前 &f{level} &7级）"
+      - "&8SCHEMA 缺口：无「命中方块」条件，命中实体时同样触发"
+    triggers:
+      ON_PROJECTILE_HIT:
+        cooldown: 3.0
+        actions:
+          - type: TELEPORT
+            base: 1.0
+            target: ARROW
+          - type: PARTICLE
+            particle: CLOUD
+            count: 15
+            spread: 0.4
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_ENDERMAN_TELEPORT
+            volume: 0.6
+            pitch: 1.4
+
+  ricochet:
+    display: "&e跳弹"
+    tier: RARE
+    max-level: 3
+    types: [BOW, CROSSBOW]
+    description:
+      - "&7箭矢命中实体后有 &f35%% &7（每级 &f+15%%&7）概率弹射"
+      - "&7弹射出的箭矢飞向下一个目标"
+    triggers:
+      ON_PROJECTILE_HIT:
+        cooldown: 0.2
+        chance: 35
+        chance-per-level: 15
+        actions:
+          - type: SPAWN_PROJECTILE
+            projectile: ARROW
+            count: 1
+            speed: 1.5
+            spread: 0.1
+          - type: PARTICLE
+            particle: CRIT
+            count: 8
+            spread: 0.3
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_ARROW_HIT
+            volume: 0.6
+            pitch: 1.3
+
+  elemental_ward:
+    display: "&9元素护盾"
+    tier: RARE
+    max-level: 4
+    types: [ARMOR]
+    description:
+      - "&7减免魔法/药水/凋零类伤害 &f{value} &7比例"
+      - "&7受击时清除身上的凋零效果"
+    triggers:
+      ON_DAMAGED:
+        cooldown: 0.5
+        actions:
+          - type: DAMAGE_REDUCE
+            base: 0.1
+            per-level: 0.06
+            max: 0.28
+          - type: CLEAR_POTION
+            potion: WITHER
+            who: SELF
+          - type: PARTICLE
+            particle: SPELL_WITCH
+            count: 10
+            spread: 0.5
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_ENCHANTMENT_TABLE_USE
+            volume: 0.5
+            pitch: 1.5
+
+  second_wind:
+    display: "&6复苏之风"
+    tier: RARE
+    max-level: 3
+    types: [ARMOR]
+    description:
+      - "&7受到致命伤害时保留 &f{value} &7颗心"
+      - "&7并获得 &f3 &7秒无敌（冷却 &f90 &7秒）"
+    triggers:
+      ON_DAMAGED:
+        cooldown: 90.0
+        actions:
+          - type: SURVIVE
+            health: 1.0
+            invulnerable: 3
+          - type: POTION
+            who: SELF
+            potion: REGENERATION
+            duration: 100
+            duration-per-level: 40
+            amplifier: 1
+          - type: PARTICLE
+            particle: TOTEM_OF_UNDYING
+            count: 1
+            who: SELF
+          - type: SOUND
+            sound: ITEM_TOTEM_USE
+            volume: 1.0
+            pitch: 1.1
+          - type: TITLE
+            title: "&6复苏之风"
+            subtitle: "&7致命伤害已被抵御"
+            fade-in: 5
+            stay: 30
+            fade-out: 10
+
+  guardian_angel:
+    display: "&f守护天使"
+    tier: RARE
+    max-level: 3
+    types: [ARMOR]
+    description:
+      - "&7附近有队友时获得额外减伤"
+      - "&7常驻抗性提升，受击时额外减伤"
+      - "&8SCHEMA 缺口：无「附近有队友」条件，以常驻光环 + 固定减伤近似"
+    triggers:
+      PASSIVE:
+        cooldown: 0
+        actions:
+          - type: POTION
+            who: SELF
+            potion: RESISTANCE
+            duration: 40
+            amplifier: 0
+            amplifier-per-level: 1
+          - type: PARTICLE
+            particle: END_ROD
+            count: 2
+            spread: 0.5
+            who: SELF
+      ON_DAMAGED:
+        cooldown: 2.0
+        actions:
+          - type: DAMAGE_REDUCE
+            base: 0.05
+            per-level: 0.02
+            max: 0.09
+          - type: SOUND
+            sound: BLOCK_BEACON_ACTIVATE
+            volume: 0.3
+            pitch: 1.9
+
+  shield_wall:
+    display: "&7盾墙"
+    tier: RARE
+    max-level: 3
+    types: [ARMOR, SHIELD]
+    description:
+      - "&7潜行时获得 &f{value} &7比例减伤"
+      - "&7代价：潜行时移动速度下降"
+      - "&7举盾格挡时额外减伤并反弹伤害"
+    triggers:
+      ON_DAMAGED:
+        cooldown: 0.5
+        conditions:
+          - type: SNEAK
+            value: true
+        actions:
+          - type: DAMAGE_REDUCE
+            base: 0.3
+            per-level: 0.08
+            max: 0.5
+          - type: PARTICLE
+            particle: CLOUD
+            count: 6
+            spread: 0.4
+            who: SELF
+          - type: SOUND
+            sound: ITEM_SHIELD_BLOCK
+            volume: 0.6
+            pitch: 0.8
+      ON_SHIELD_BLOCK:
+        cooldown: 0.5
+        actions:
+          - type: DAMAGE_REDUCE
+            base: 0.15
+            per-level: 0.05
+            max: 0.3
+          - type: REFLECT
+            base: 0.15
+            per-level: 0.1
+            max: 0.4
+          - type: PARTICLE
+            particle: ENCHANTED_HIT
+            count: 8
+            spread: 0.5
+            who: TARGET
+          - type: SOUND
+            sound: ITEM_SHIELD_BLOCK
+            volume: 0.7
+            pitch: 1.4
+      PASSIVE:
+        cooldown: 0
+        conditions:
+          - type: SNEAK
+            value: true
+        actions:
+          - type: POTION
+            who: SELF
+            potion: SLOWNESS
+            duration: 40
+            amplifier: 0
+
+  pain_suppression:
+    display: "&d痛觉抑制"
+    tier: RARE
+    max-level: 3
+    types: [ARMOR]
+    description:
+      - "&7受到伤害后获得 &f速度 I &7，持续更久（&f{level} &7级）"
+      - "&7并短暂减免后续伤害"
+    triggers:
+      ON_DAMAGED:
+        cooldown: 1.0
+        actions:
+          - type: POTION
+            who: SELF
+            potion: SPEED
+            duration: 100
+            duration-per-level: 40
+            amplifier: 0
+          - type: DAMAGE_REDUCE
+            base: 0.05
+            per-level: 0.03
+            max: 0.14
+          - type: PARTICLE
+            particle: CLOUD
+            count: 8
+            spread: 0.4
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_BEACON_ACTIVATE
+            volume: 0.25
+            pitch: 1.8
+
+  block_breaker:
+    display: "&8碎岩"
+    tier: RARE
+    max-level: 3
+    types: [PICKAXE]
+    description:
+      - "&7对黑曜石、远古残骸等高硬度方块挖掘速度大幅提升"
+      - "&7破坏后武器损耗降低（近似：小幅修复）"
+    triggers:
+      ON_MINE_TICK:
+        cooldown: 3.0
+        conditions:
+          - type: BLOCK
+            value: [OBSIDIAN, CRYING_OBSIDIAN, ANCIENT_DEBRIS, NETHERITE_BLOCK, RESPAWN_ANCHOR, ENCHANTING_TABLE, DIAMOND_ORE, DEEPSLATE_DIAMOND_ORE, EMERALD_ORE, DEEPSLATE_EMERALD_ORE, GOLD_ORE, DEEPSLATE_GOLD_ORE]
+        actions:
+          - type: POTION
+            who: SELF
+            potion: HASTE
+            duration: 60
+            amplifier: 1
+      ON_BLOCK_BREAK:
+        cooldown: 0
+        conditions:
+          - type: BLOCK
+            value: [OBSIDIAN, CRYING_OBSIDIAN, ANCIENT_DEBRIS, NETHERITE_BLOCK, RESPAWN_ANCHOR, ENCHANTING_TABLE, DIAMOND_ORE, DEEPSLATE_DIAMOND_ORE, EMERALD_ORE, DEEPSLATE_EMERALD_ORE, GOLD_ORE, DEEPSLATE_GOLD_ORE]
+        actions:
+          - type: DURABILITY
+            base: 2
+            per-level: 1
+            max: 5
+          - type: PARTICLE
+            particle: CRIT
+            count: 8
+            spread: 0.5
+            who: BLOCK
+          - type: SOUND
+            sound: BLOCK_STONE_BREAK
+            volume: 0.5
+            pitch: 0.7
+
+  fortunes_favor:
+    display: "&6幸运女神"
+    tier: RARE
+    max-level: 3
+    types: [PICKAXE, SHOVEL, HOE]
+    description:
+      - "&7挖掘时有 &f15%% &7（每级 &f+8%%&7）概率获得额外资源"
+      - "&7触发时掉落 ×&f{value}&7，并小概率挖到珍稀矿物"
+    triggers:
+      ON_BLOCK_BREAK:
+        cooldown: 0
+        chance: 15
+        chance-per-level: 8
+        actions:
+          - type: MULTIPLY_DROP
+            base: 1.5
+            per-level: 0.5
+            max: 3.0
+          - type: CONVERT_DROP
+            base: 0.05
+            per-level: 0.05
+            max: 0.2
+            material: DIAMOND
+          - type: PARTICLE
+            particle: VILLAGER_HAPPY
+            count: 8
+            spread: 0.5
+            who: BLOCK
+          - type: SOUND
+            sound: ENTITY_EXPERIENCE_ORB_PICKUP
+            volume: 0.5
+            pitch: 1.6
+
+  smelter_master:
+    display: "&c熔炉大师"
+    tier: RARE
+    max-level: 3
+    types: [PICKAXE, SHOVEL]
+    description:
+      - "&7挖掘矿物/沙子等方块时自动熔炼掉落物，产出 ×&f{value}"
+      - "&7原矿与沙土直接变为成品"
+    triggers:
+      ON_BLOCK_BREAK:
+        cooldown: 0
+        conditions:
+          - type: BLOCK
+            value: ["*_ORE", SAND, RED_SAND, COBBLESTONE, CLAY, CACTUS]
+        actions:
+          # SCHEMA 缺口: AUTO_SMELT 只文档化 multiplier，等级缩放借用通用 base/per-level/max。
+          - type: AUTO_SMELT
+            multiplier: 2
+            base: 2
+            per-level: 0.5
+            max: 3.5
+          - type: PARTICLE
+            particle: FLAME
+            count: 8
+            spread: 0.4
+            who: BLOCK
+          - type: SOUND
+            sound: BLOCK_FURNACE_FIRE_CRACKLE
+            volume: 0.5
+            pitch: 1.0
+
+  compressor:
+    display: "&b压缩者"
+    tier: RARE
+    max-level: 3
+    types: [PICKAXE, SHOVEL, HOE]
+    description:
+      - "&7挖掘时按 &f{value} &7的比例概率把零散掉落压缩成块"
+      - "&7（近似实现：转换为铁块）"
+    triggers:
+      ON_BLOCK_BREAK:
+        cooldown: 0
+        actions:
+          # SCHEMA 缺口: 无「按 9 个同种材料合成块」动作，用 CONVERT_DROP 近似。
+          - type: CONVERT_DROP
+            base: 0.2
+            per-level: 0.1
+            max: 0.5
+            material: IRON_BLOCK
+          - type: PARTICLE
+            particle: CRIT
+            count: 6
+            spread: 0.4
+            who: BLOCK
+          - type: SOUND
+            sound: BLOCK_PISTON_CONTRACT
+            volume: 0.5
+            pitch: 1.4
+
+  junk_to_treasure:
+    display: "&a变废为宝"
+    tier: RARE
+    max-level: 3
+    types: [FISHING_ROD]
+    description:
+      - "&7钓到垃圾时按 &f{value} &7的比例概率转化为可用资源"
+      - "&7（铁锭，另有概率变为金锭）"
+      - "&8SCHEMA 缺口：无法判断钓获物是否为「垃圾」，改为对渔获判定"
+    triggers:
+      ON_FISH:
+        cooldown: 0.5
+        actions:
+          - type: CONVERT_DROP
+            base: 0.5
+            per-level: 0.15
+            max: 0.9
+            material: IRON_INGOT
+          - type: CONVERT_DROP
+            base: 0.25
+            per-level: 0.1
+            max: 0.6
+            material: GOLD_INGOT
+          - type: PARTICLE
+            particle: SPLASH
+            count: 10
+            spread: 0.5
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_FISHING_BOBBER_SPLASH
+            volume: 0.6
+            pitch: 1.2
+
+  xp_fisher:
+    display: "&e垂钓达人"
+    tier: RARE
+    max-level: 3
+    types: [FISHING_ROD]
+    description:
+      - "&7钓鱼获得的经验大幅提升：经验获取 ×&f2.0 &7（每级 &f+0.75&7，上限 &f4.0&7）"
+      - "&7收竿时获得额外经验反馈"
+    triggers:
+      ON_XP_GAIN:
+        cooldown: 0.2
+        actions:
+          # SCHEMA v1.1: MULTIPLY_XP（倍率，通用 base/per-level/max 缩放）
+          - type: MULTIPLY_XP
+            base: 2.0
+            per-level: 0.75
+            max: 4.0
+      ON_FISH:
+        cooldown: 0.5
+        actions:
+          - type: PARTICLE
+            particle: ENCHANT
+            count: 12
+            spread: 0.6
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_EXPERIENCE_ORB_PICKUP
+            volume: 0.7
+            pitch: 1.4
+
+  rocket_jump:
+    display: "&b火箭助推"
+    tier: RARE
+    max-level: 3
+    types: [ELYTRA]
+    description:
+      - "&7滑翔时右键获得额外推力 &f{value}"
+      - "&7冷却 &f5 &7秒，并消耗鞘翅耐久"
+      - "&8SCHEMA 缺口：无「滑翔中」条件，以高度区间近似"
+    triggers:
+      ON_INTERACT:
+        cooldown: 5.0
+        conditions:
+          - type: Y
+            min: 60
+            max: 320
+        actions:
+          - type: LAUNCH
+            base: 1.2
+            per-level: 0.4
+            max: 2.4
+            who: SELF
+          # 负耐久 = 损耗; 不写 max 以免被「不低于 0」的钳制规则归零。
+          - type: DURABILITY
+            base: -3
+            per-level: -1
+          - type: PARTICLE
+            particle: FLAME
+            count: 25
+            spread: 0.5
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_GENERIC_EXPLODE
+            volume: 0.6
+            pitch: 1.6
+
+  aero_armor:
+    display: "&f气动护甲"
+    tier: RARE
+    max-level: 3
+    types: [ELYTRA]
+    description:
+      - "&7滑翔时获得 &f{value} &7比例减伤"
+      - "&7坠落伤害大幅减免，撞击不再受伤"
+      - "&8SCHEMA 缺口：无「滑翔中」条件，以高度区间近似"
+    triggers:
+      ON_FALL_DAMAGE:
+        cooldown: 0.5
+        actions:
+          - type: DAMAGE_REDUCE
+            base: 0.5
+            per-level: 0.15
+            max: 0.9
+          - type: PARTICLE
+            particle: CLOUD
+            count: 10
+            spread: 0.6
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_ENDER_DRAGON_FLAP
+            volume: 0.5
+            pitch: 1.3
+      ON_DAMAGED:
+        cooldown: 1.0
+        conditions:
+          - type: Y
+            min: 60
+            max: 320
+        actions:
+          - type: DAMAGE_REDUCE
+            base: 0.1
+            per-level: 0.05
+            max: 0.25
+          - type: PARTICLE
+            particle: CLOUD
+            count: 6
+            spread: 0.4
+            who: SELF
+
+  energy_shield:
+    display: "&9能量盾"
+    tier: RARE
+    max-level: 3
+    types: [SHIELD, ARMOR]
+    description:
+      - "&7举盾格挡时额外吸收 &f{value} &7比例伤害"
+      - "&7并反弹部分伤害给攻击者"
+    triggers:
+      ON_SHIELD_BLOCK:
+        cooldown: 0.5
+        actions:
+          - type: DAMAGE_REDUCE
+            base: 0.2
+            per-level: 0.1
+            max: 0.5
+          - type: REFLECT
+            base: 0.2
+            per-level: 0.1
+            max: 0.5
+          - type: POTION
+            who: SELF
+            potion: ABSORPTION
+            duration: 60
+            duration-per-level: 20
+            amplifier: 0
+          - type: PARTICLE
+            particle: ELECTRIC_SPARK
+            count: 12
+            spread: 0.5
+            who: SELF
+          - type: SOUND
+            sound: ITEM_SHIELD_BLOCK
+            volume: 0.8
+            pitch: 0.9
+
+  prospector:
+    display: "&b探矿者"
+    tier: RARE
+    max-level: 3
+    types: [ALL]
+    description:
+      - "&7挖掘时有概率感应附近矿脉并给出提示"
+      - "&8SCHEMA 缺口：无扫描/雷达动作，以提示音与粒子近似"
+    triggers:
+      ON_BLOCK_BREAK:
+        cooldown: 8.0
+        chance: 25
+        chance-per-level: 10
+        conditions:
+          - type: Y
+            min: -64
+            max: 320
+        actions:
+          - type: ACTIONBAR
+            value: "&b探矿者 &7· 附近似乎存在矿脉（&f{level} &7级感应）"
+          - type: PARTICLE
+            particle: ELECTRIC_SPARK
+            count: 20
+            spread: 1.5
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_AMETHYST_BLOCK_CHIME
+            volume: 0.6
+            pitch: 1.4
+
+  soul_bound:
+    display: "&5灵魂绑定"
+    tier: RARE
+    max-level: 3
+    types: [ALL]
+    description:
+      - "&7死亡时该物品不掉落（&fSOULBOUND&7）"
+      - "&7每次触发消耗 &f{level} &7点额外耐久"
+    triggers:
+      ON_DEATH:
+        cooldown: 0
+        actions:
+          # SCHEMA v1.1: SOULBOUND —— 死亡不掉落该物品
+          - type: SOULBOUND
+          - type: DURABILITY
+            base: -25
+            per-level: -5
+          - type: PARTICLE
+            particle: SOUL
+            count: 20
+            spread: 0.8
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_SOUL_SAND_BREAK
+            volume: 0.6
+            pitch: 0.7
+          - type: MESSAGE
+            value: "&5灵魂绑定 &7生效：你的物品被灵魂守护"
+            who: SELF
+
+  jack_of_all_trades:
+    display: "&6万事通"
+    tier: RARE
+    max-level: 3
+    types: [ALL]
+    description:
+      - "&7全属性小幅提升：速度、急迫、生命恢复"
+      - "&7常驻生效，效果等级随附魔等级提升"
+    triggers:
+      PASSIVE:
+        cooldown: 0
+        actions:
+          - type: POTION
+            who: SELF
+            potion: SPEED
+            duration: 40
+            amplifier: 0
+            amplifier-per-level: 1
+          - type: POTION
+            who: SELF
+            potion: HASTE
+            duration: 40
+            amplifier: 0
+            amplifier-per-level: 1
+          - type: POTION
+            who: SELF
+            potion: REGENERATION
+            duration: 40
+            amplifier: 0
+            amplifier-per-level: 1
+          - type: PARTICLE
+            particle: VILLAGER_HAPPY
+            count: 2
+            spread: 0.4
+            who: SELF
+
+  curse_of_binding:
+    display: "&4束缚诅咒"
+    tier: RARE
+    max-level: 1
+    types: [ALL]
+    description:
+      - "&c诅咒：无法主动丢弃该物品"
+      - "&8SCHEMA 缺口：无「丢弃物品」触发器/动作，以周期提示近似"
+    triggers:
+      PASSIVE:
+        cooldown: 30.0
+        actions:
+          - type: MESSAGE
+            value: "&4束缚诅咒 &7· 该物品已被束缚，无法主动丢弃"
+            who: SELF
+          - type: PARTICLE
+            particle: SPELL_WITCH
+            count: 4
+            spread: 0.3
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_ENCHANTMENT_TABLE_USE
+            volume: 0.3
+            pitch: 0.6
+
+  leeching_strike:
+    display: "&9汲取打击"
+    tier: RARE
+    max-level: 3
+    types: [SWORD, AXE]
+    description:
+      - "&7造成额外真实伤害，并按 &f{value}%% &7转化为自身治疗"
+    triggers:
+      ON_HIT:
+        cooldown: 0
+        actions:
+          - type: LIFESTEAL
+            base: 0.15
+            per-level: 0.1
+            max: 0.5
+          - type: TRUE_DAMAGE
+            base: 1.5
+            per-level: 1.0
+            max: 5.0
+          - type: PARTICLE
+            particle: HEART
+            count: 3
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_PLAYER_LEVELUP
+            volume: 0.4
+            pitch: 1.6

@@ -1,0 +1,475 @@
+# AdvancedEnchants - 神话级附魔
+# 契约：docs/ENCHANT_ROSTER.md · 规范：docs/SCHEMA.md
+# tier=MYTHIC，共 10 条：
+#   eternal_blade storm_breaker skybreaker_shot astral_body eternal_guardian
+#   adaptive_armor terraforming void_fishing void_sovereign world_breaker
+enchants:
+  eternal_blade:
+    display: "&5永恒之刃"
+    tier: MYTHIC
+    max-level: 3
+    types: [SWORD]
+    description:
+      - "&7斩杀阈值提升至 &f{value} &7（生命比例）"
+      - "&7斩杀生效时重置附魔冷却并回满武器耐久"
+    conflicts: [thunder_edge]
+    triggers:
+      ON_HIT:
+        cooldown: 45.0
+        conditions:
+          - type: TARGET_HEALTH
+            value: 0.2
+            mode: BELOW
+          - type: CHANCE
+            value: 20
+            per-level: 10
+        actions:
+          - type: EXECUTE
+            base: 0.2
+            per-level: 0.05
+            max: 0.3
+            damage: 14.0
+          - type: TRUE_DAMAGE
+            base: 6
+            per-level: 3
+            max: 14
+          - type: DURABILITY
+            base: 100
+            per-level: 50
+            max: 250
+          - type: PARTICLE
+            particle: SWEEP_ATTACK
+            count: 25
+            spread: 1.2
+            who: TARGET
+          - type: SOUND
+            sound: ITEM_TOTEM_USE
+            volume: 0.8
+            pitch: 1.2
+      ON_KILL:
+        cooldown: 1.0
+        actions:
+          - type: DURABILITY
+            base: 50
+            per-level: 50
+            max: 200
+          - type: PARTICLE
+            particle: END_ROD
+            count: 20
+            spread: 0.8
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_ENDER_DRAGON_GROWL
+            volume: 0.6
+            pitch: 1.4
+
+  storm_breaker:
+    display: "&c破军"
+    tier: MYTHIC
+    max-level: 3
+    types: [AXE]
+    description:
+      - "&7蓄力重击造成范围冲击波并击退周围敌人"
+      - "&7冷却较长，触发时附带震爆特效"
+    conflicts: [execute_axe]
+    triggers:
+      ON_HIT:
+        cooldown: 12.0
+        conditions:
+          - type: CHANCE
+            value: 20
+            per-level: 5
+        actions:
+          - type: SHOCKWAVE
+            radius: 3.0
+            damage: 8.0
+            knockback: 1.5
+          - type: KNOCKBACK
+            base: 1.0
+            per-level: 0.3
+            max: 2.0
+            who: TARGET
+          - type: EXPLOSION
+            base: 2.0
+            per-level: 0.5
+            max: 3.5
+            set-fire: false
+            break-blocks: false
+          - type: POTION
+            who: TARGET
+            potion: SLOWNESS
+            duration: 40
+            amplifier: 1
+          - type: PARTICLE
+            particle: EXPLOSION
+            count: 8
+            spread: 1.0
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_GENERIC_EXPLODE
+            volume: 1.0
+            pitch: 0.7
+
+  skybreaker_shot:
+    display: "&b天穹之箭"
+    tier: MYTHIC
+    max-level: 3
+    types: [BOW, CROSSBOW]
+    description:
+      - "&7远距离命中造成 &f{value} &7额外真实伤害并击飞"
+      - "&7贯穿路径上的目标，拉弓时有蓄能光效"
+    conflicts: [arrow_rain]
+    triggers:
+      ON_PROJECTILE_HIT:
+        cooldown: 10.0
+        conditions:
+          - type: PROJECTILE_DISTANCE
+            min: 8
+          - type: CHANCE
+            value: 40
+            per-level: 15
+        actions:
+          - type: TRUE_DAMAGE
+            base: 6
+            per-level: 3
+            max: 16
+          - type: DAMAGE_MULTIPLY
+            base: 1.3
+            per-level: 0.15
+            max: 1.8
+          - type: LAUNCH
+            base: 0.6
+            per-level: 0.2
+            max: 1.2
+            who: TARGET
+          - type: PARTICLE
+            particle: END_ROD
+            count: 60
+            spread: 1.0
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_LIGHTNING_BOLT_IMPACT
+            volume: 1.0
+            pitch: 1.6
+      ON_BOW_CHARGE:
+        cooldown: 0.5
+        actions:
+          - type: PARTICLE
+            particle: END_ROD
+            count: 4
+            spread: 0.4
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_BEACON_POWER_SELECT
+            volume: 0.2
+            pitch: 1.9
+
+  astral_body:
+    display: "&d星界之躯"
+    tier: MYTHIC
+    max-level: 3
+    types: [ARMOR]
+    description:
+      - "&7概率使受到的伤害完全无效"
+      - "&7触发后短暂获得抗性提升"
+    conflicts: [divine_shield]
+    triggers:
+      ON_DAMAGED:
+        cooldown: 20.0
+        conditions:
+          - type: CHANCE
+            value: 8
+            per-level: 4
+        actions:
+          - type: DODGE
+            base: 1.0
+          - type: POTION
+            who: SELF
+            potion: DAMAGE_RESISTANCE
+            duration: 60
+            duration-per-level: 20
+            amplifier: 1
+          - type: PARTICLE
+            particle: END_ROD
+            count: 40
+            spread: 1.2
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_BEACON_ACTIVATE
+            volume: 0.8
+            pitch: 1.8
+      PASSIVE:
+        cooldown: 1.0
+        actions:
+          - type: PARTICLE
+            particle: END_ROD
+            count: 3
+            spread: 0.6
+            who: SELF
+
+  eternal_guardian:
+    display: "&e永恒守护"
+    tier: MYTHIC
+    max-level: 3
+    types: [ARMOR]
+    description:
+      - "&7为全队提供持续减伤光环"
+      - "&7自身濒死时全队获得护盾与保护"
+    conflicts: [life_link]
+    triggers:
+      PASSIVE:
+        cooldown: 5.0
+        conditions:
+          - type: HEALTH
+            value: 0.3
+            mode: ABOVE
+        actions:
+          - type: POTION
+            who: SELF
+            potion: DAMAGE_RESISTANCE
+            duration: 60
+            duration-per-level: 20
+            amplifier: 0
+          - type: PARTICLE
+            particle: TOTEM_OF_UNDYING
+            count: 8
+            spread: 1.2
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_CONDUIT_ACTIVATE
+            volume: 0.5
+            pitch: 1.0
+      ON_DAMAGED:
+        cooldown: 30.0
+        conditions:
+          - type: HEALTH
+            value: 0.3
+            mode: BELOW
+        actions:
+          - type: POTION
+            who: SELF
+            potion: ABSORPTION
+            duration: 200
+            duration-per-level: 40
+            amplifier: 3
+          - type: MESSAGE
+            value: "&b永恒守护展开，全队获得护盾！"
+            who: NEARBY
+          - type: PARTICLE
+            particle: TOTEM_OF_UNDYING
+            count: 40
+            spread: 1.5
+            who: SELF
+          - type: SOUND
+            sound: ITEM_TOTEM_USE
+            volume: 1.0
+            pitch: 0.8
+
+  adaptive_armor:
+    display: "&a自适应装甲"
+    tier: MYTHIC
+    max-level: 3
+    types: [ARMOR]
+    description:
+      - "&7受到伤害后提升 &f{value} &7比例减伤"
+      - "&7本场战斗中同类抗性持续叠加"
+    conflicts: [arcane_resistance]
+    triggers:
+      ON_DAMAGED:
+        cooldown: 3.0
+        actions:
+          - type: DAMAGE_REDUCE
+            base: 0.08
+            per-level: 0.04
+            max: 0.2
+          - type: POTION
+            who: SELF
+            potion: ABSORPTION
+            duration: 60
+            duration-per-level: 20
+            amplifier: 0
+          - type: PARTICLE
+            particle: ENCHANT
+            count: 15
+            spread: 0.8
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_ANVIL_USE
+            volume: 0.5
+            pitch: 1.4
+
+  terraforming:
+    display: "&6地形塑造"
+    tier: MYTHIC
+    max-level: 2
+    types: [PICKAXE, SHOVEL, HOE]
+    description:
+      - "&7潜行右键一键平整/填充小范围地形"
+      - "&7严格限流（单次最多 48 格），受保护区域自动跳过"
+    conflicts: [vein_apocalypse]
+    triggers:
+      ON_INTERACT:
+        cooldown: 15.0
+        conditions:
+          - type: SNEAK
+            value: true
+        actions:
+          - type: BREAK_BLOCK
+            radius: 3
+            drops: false
+            limit: 48
+          - type: SET_BLOCK
+            material: DIRT
+            chance: 100
+            radius: 3
+          - type: PARTICLE
+            particle: SMOKE
+            count: 30
+            spread: 1.5
+            who: BLOCK
+          - type: SOUND
+            sound: BLOCK_GRASS_BREAK
+            volume: 1.0
+            pitch: 0.8
+          - type: MESSAGE
+            value: "&7地形塑造完成"
+            who: SELF
+
+  void_fishing:
+    display: "&5虚空垂钓"
+    tier: MYTHIC
+    max-level: 3
+    types: [FISHING_ROD]
+    description:
+      - "&7渔获数量 ×&f{value}&7，并额外掉落稀有物"
+      - "&7可钓出末地/下界专属材料与附魔书"
+    conflicts: [kraken_call]
+    triggers:
+      ON_FISH:
+        cooldown: 5.0
+        conditions:
+          - type: CHANCE
+            value: 20
+            per-level: 10
+        actions:
+          - type: MULTIPLY_DROP
+            base: 2
+            per-level: 0.5
+            max: 4
+          - type: CONVERT_DROP
+            base: 0.25
+            per-level: 0.1
+            max: 0.6
+            material: ENCHANTED_BOOK
+          - type: CONVERT_DROP
+            base: 0.15
+            per-level: 0.05
+            max: 0.4
+            material: NETHERITE_SCRAP
+          - type: PARTICLE
+            particle: REVERSE_PORTAL
+            count: 30
+            spread: 1.0
+            who: SELF
+          - type: SOUND
+            sound: BLOCK_END_PORTAL_SPAWN
+            volume: 0.6
+            pitch: 1.4
+
+  void_sovereign:
+    display: "&8虚空主宰"
+    tier: MYTHIC
+    max-level: 3
+    types: [ELYTRA]
+    description:
+      - "&7滑翔穿过敌人造成 &f{value} &7伤害并击退"
+      - "&7空中命中后短暂免疫伤害"
+    conflicts: [phoenix_wing]
+    triggers:
+      ON_HIT:
+        cooldown: 1.5
+        conditions:
+          - type: ON_GROUND
+            value: false
+        actions:
+          - type: TRUE_DAMAGE
+            base: 4
+            per-level: 2
+            max: 10
+          - type: KNOCKBACK
+            base: 0.6
+            per-level: 0.2
+            max: 1.2
+            who: TARGET
+          - type: POTION
+            who: SELF
+            potion: DAMAGE_RESISTANCE
+            duration: 40
+            duration-per-level: 20
+            amplifier: 1
+          - type: PARTICLE
+            particle: PORTAL
+            count: 20
+            spread: 0.8
+            who: TARGET
+          - type: SOUND
+            sound: ENTITY_ENDERMAN_TELEPORT
+            volume: 0.6
+            pitch: 1.6
+      PASSIVE:
+        cooldown: 2.0
+        conditions:
+          - type: ON_GROUND
+            value: false
+        actions:
+          - type: POTION
+            who: SELF
+            potion: DAMAGE_RESISTANCE
+            duration: 40
+            amplifier: 0
+          - type: PARTICLE
+            particle: PORTAL
+            count: 6
+            spread: 0.6
+            who: SELF
+          - type: SOUND
+            sound: ENTITY_ENDER_DRAGON_FLAP
+            volume: 0.2
+            pitch: 1.8
+
+  world_breaker:
+    display: "&4世界破坏者"
+    tier: MYTHIC
+    max-level: 1
+    types: [ALL]
+    description:
+      - "&7挖掘时有极低概率引发半径 &f{value} &7的范围破坏"
+      - "&7不掉落任何方块，严格限流（单次最多 48 格）"
+    conflicts: [terraforming]
+    triggers:
+      ON_BLOCK_BREAK:
+        cooldown: 900.0
+        chance: 0.05
+        actions:
+          - type: EXPLOSION
+            base: 4.0
+            set-fire: false
+            break-blocks: false
+          - type: BREAK_BLOCK
+            radius: 4
+            drops: false
+            limit: 48
+          - type: DURABILITY
+            base: -80
+          - type: PARTICLE
+            particle: EXPLOSION_EMITTER
+            count: 3
+            spread: 2.0
+            who: BLOCK
+          - type: SOUND
+            sound: ENTITY_WITHER_SPAWN
+            volume: 1.1
+            pitch: 0.6
+          - type: MESSAGE
+            value: "&4世界破坏者降临！"
+            who: NEARBY

@@ -1,0 +1,207 @@
+# ============================================================
+#  custom.yml —— 你的自定义附魔（升级插件不会覆盖本文件）
+#
+#  这是「玩家/服主自行设计附魔」的入口：完全用 YAML 描述，
+#  不需要写 Java 代码、不需要重新编译。改完执行 /ae reload 生效。
+#
+#  写法速查（完整字段见 docs/SCHEMA.md）：
+#    triggers.<触发器>.chance / chance-per-level / cooldown / conditions / actions
+#    数值字段：base（1 级值）、per-level（每级增量）、max（上限）
+#             scale：LINEAR / QUADRATIC / EXPONENTIAL / DIMINISHING
+#    description 里的 {value} = 第一个 action 在当前等级的数值
+#
+#  本文件默认不注册任何附魔（保持开箱纯净）。
+#  下面这些示例都是注释，取消注释即可使用；也可以直接抄下面「常用片段」。
+# ============================================================
+
+enchants: {}
+
+# ============================================================
+#  完整示例（取消注释即可用）
+# ============================================================
+#
+#  # 镐的「幸运星」：挖掘矿石额外掉落
+#  my_lucky_star:
+#    display: "&#FFD700幸运星"
+#    tier: EPIC
+#    max-level: 4
+#    types: [PICKAXE, SHOVEL, FISHING_ROD]
+#    description:
+#      - "&7挖掘/钓鱼时有 &f{value}%% &7几率额外掉落"
+#    triggers:
+#      ON_BLOCK_BREAK:
+#        chance: 25
+#        chance-per-level: 10
+#        conditions:
+#          - type: BLOCK
+#            value: ["*_ORE"]
+#        actions:
+#          - type: MULTIPLY_DROP
+#            base: 2
+#            per-level: 0.5
+#            max: 4
+#          - type: PARTICLE
+#            particle: HAPPY_VILLAGER
+#            count: 8
+#            who: BLOCK
+#          - type: SOUND
+#            sound: ENTITY_EXPERIENCE_ORB_PICKUP
+#            volume: 0.5
+#            pitch: 1.5
+#
+#  # 剑的「噬魂斩」：按目标最大生命造成额外伤害
+#  my_soul_reaver:
+#    display: "&#A020F0噬魂斩"
+#    tier: LEGENDARY
+#    max-level: 5
+#    types: [SWORD, AXE]
+#    description:
+#      - "&7命中时按目标最大生命 &f{value}%% &7造成额外伤害"
+#    conflicts: [lifesteal, vampiric_aura]
+#    rarity-weight: 3
+#    triggers:
+#      ON_HIT:
+#        cooldown: 1.5
+#        chance: 20
+#        chance-per-level: 8
+#        conditions:
+#          - type: TARGET_TYPE
+#            value: [PLAYER, ZOMBIE, SKELETON, WITHER_SKELETON, ENDERMAN]
+#        actions:
+#          - type: PERCENT_MAX_HP
+#            base: 0.03
+#            per-level: 0.015
+#            max: 0.12
+#            scale: DIMINISHING
+#          - type: LIFESTEAL
+#            base: 0.2
+#            per-level: 0.05
+#            max: 0.5
+#          - type: PARTICLE
+#            particle: SOUL
+#            count: 10
+#            spread: 0.5
+#            who: TARGET
+#          - type: SOUND
+#            sound: PARTICLE_SOUL_ESCAPE
+#            volume: 0.6
+#            pitch: 0.8
+#
+#  # 同一触发点多套参数（列表式写法）
+#  my_berserk_armor:
+#    display: "&#FF4444狂血护甲"
+#    tier: RARE
+#    max-level: 3
+#    types: [ARMOR]
+#    description:
+#      - "&7低血量时大幅减伤并获得力量"
+#    triggers:
+#      ON_DAMAGED:
+#        - conditions:
+#            - type: HEALTH
+#              value: 0.4
+#              mode: BELOW
+#          actions:
+#            - type: DAMAGE_REDUCE
+#              base: 0.2
+#              per-level: 0.1
+#              max: 0.5
+#            - type: POTION
+#              who: SELF
+#              potion: STRENGTH
+#              duration: 60
+#              amplifier: 0
+#              amplifier-per-level: 0.5
+#        - actions:
+#            - type: SOUND
+#              sound: ENTITY_IRON_GOLEM_HURT
+#              volume: 0.4
+#              pitch: 1.3
+#
+#  # 负面附魔（诅咒）：用持续掉血换更高掉落
+#  my_greed_curse:
+#    display: "&#5A5A5A贪婪诅咒"
+#    tier: UNCOMMON
+#    max-level: 3
+#    types: [ALL]
+#    description:
+#      - "&7掉落提升，但你持续流失生命"
+#    triggers:
+#      ON_LOOT:
+#        chance: 30
+#        chance-per-level: 15
+#        actions:
+#          - type: MULTIPLY_DROP
+#            base: 2
+#            per-level: 0.5
+#            max: 4
+#      PASSIVE:
+#        cooldown: 4.0
+#        actions:
+#          - type: POTION
+#            who: SELF
+#            potion: WITHER
+#            duration: 100
+#            amplifier: 0
+
+# ============================================================
+#  常用片段（复制进上面的 enchants 里改数值即可）
+# ============================================================
+#
+# 1) 命中吸血：
+#      ON_HIT:
+#        actions:
+#          - type: LIFESTEAL
+#            base: 0.05
+#            per-level: 0.03
+#            max: 0.25
+#
+# 2) 下雨 / 夜晚强化：
+#      ON_HIT:
+#        conditions:
+#          - type: IN_RAIN          # 或 DAY / NIGHT / TIME{min,max}
+#            value: true
+#        actions:
+#          - type: DAMAGE_MULTIPLY
+#            base: 1.2
+#            per-level: 0.1
+#
+# 3) 击杀累积灵魂（其它附魔用 SOULS 条件消费）：
+#      ON_KILL:
+#        actions:
+#          - type: SOULS
+#            base: 2
+#            per-level: 1
+#
+# 4) 死亡不掉落（灵魂绑定）：
+#      ON_DEATH:
+#        actions:
+#          - type: SOULBOUND
+#
+# 5) 经验倍率：
+#      ON_XP_GAIN:
+#        actions:
+#          - type: MULTIPLY_XP
+#            base: 1.3
+#            per-level: 0.1
+#            max: 2.0
+#
+# 6) 概率完全闪避：
+#      ON_DAMAGED:
+#        chance: 10
+#        chance-per-level: 5
+#        actions:
+#          - type: DODGE
+#            base: 1.0
+#
+# 7) 只有队友在附近才生效的护甲：
+#      ON_DAMAGED:
+#        conditions:
+#          - type: NEARBY_ALLIES
+#            min: 1
+#            radius: 8
+#        actions:
+#          - type: DAMAGE_REDUCE
+#            base: 0.1
+#            per-level: 0.05
+#            max: 0.3
