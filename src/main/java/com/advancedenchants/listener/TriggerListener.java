@@ -666,8 +666,26 @@ public final class TriggerListener implements Listener {
         }
     }
 
-    /** ON_ENCHANT：附魔台附魔成功（SCHEMA 定义），不是磨刀石。 */
+    /**
+     * 村民交易上限兜底。
+     *
+     * 村民出售的附魔书/装备可能带着高于 max-level 的自定义附魔（数据包、刷新过的交易，
+     * 或其它插件写入），玩家直接买下就绕过了 YAML 声明的上限 —— 与铁砧那条路径同源。
+     * 这里在交易完成时把结果物品的等级钳回上限。
+     */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onTrade(io.papermc.paper.event.player.PlayerTradeEvent event) {
+        org.bukkit.inventory.MerchantRecipe recipe = event.getTrade();
+        if (recipe == null) {
+            return;
+        }
+        ItemStack result = recipe.getResult();
+        if (result != null && !result.getType().isAir()) {
+            engine.registry().clampLevels(result);
+        }
+    }
+
+    /** ON_ENCHANT：附魔台附魔成功（SCHEMA 定义），不是磨刀石。 */    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEnchantItem(org.bukkit.event.enchantment.EnchantItemEvent event) {
         Player player = event.getEnchanter();
         ItemStack item = event.getItem();
