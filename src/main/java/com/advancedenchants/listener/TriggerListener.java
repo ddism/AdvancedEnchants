@@ -348,6 +348,14 @@ public final class TriggerListener implements Listener {
             ctx.target = dead;
             ctx.drops = event.getDrops();
             apply(ctx, event, killer);
+
+            // 生物掉落也要走 ON_LOOT：否则 MULTIPLY_DROP / CONVERT_DROP / AUTO_SMELT
+            // 在「击杀掉落」上没有作用对象（scavenger / hunter_instinct / kraken_call 就属于这种）。
+            TriggerCtx lootCtx = ctx(killer, TriggerCtx.TriggerKind.ON_LOOT, event);
+            lootCtx.victim = dead;
+            lootCtx.target = dead;
+            lootCtx.drops = event.getDrops();
+            apply(lootCtx, event, killer);
         }
         // 玩家的 ON_DEATH 统一由 onPlayerDeath 处理（PlayerDeathEvent 继承自 EntityDeathEvent，
         // 两处都跑会导致灵魂绑定耐久被扣两次、粒子/消息发两遍）
@@ -663,13 +671,6 @@ public final class TriggerListener implements Listener {
         ItemStack manipulated = (ItemStack) ctx.state("result.out");
         if (manipulated != null) {
             event.setResult(manipulated);
-        }
-        // 上限兜底：原版铁砧叠加走 addEnchant(..., ignoreLevelRestriction=true)，
-        // 会无视附魔自己的 max-level。这里把结果物品的等级钳回上限后再交回事件。
-        ItemStack anvilResult = event.getResult();
-        if (anvilResult != null && !anvilResult.getType().isAir()
-                && engine.registry().clampLevels(anvilResult)) {
-            event.setResult(anvilResult);
         }
     }
 
