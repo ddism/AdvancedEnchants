@@ -291,7 +291,15 @@ public final class Conditions {
         return false;
     }
 
-    /** 简易通配：* 匹配任意长度，大小写不敏感，允许省略命名空间。 */
+    /**
+     * 带缓存的通配匹配：* 匹配任意长度，大小写不敏感，允许省略命名空间。
+     *
+     * 热路径优化：ON_BLOCK_BREAK / ON_LOOT 每次触发都会对每个 BLOCK 条件做匹配，
+     * 逐个 Pattern.compile 会造成可观测的卡顿，所以缓存「模式 -> 正则」。
+     * 缓存只由配置里的模式字符串填充，天然有界。
+     */
+    private static final Map<String, java.util.regex.Pattern> WILDCARD_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
+
     public static boolean wildcard(String pattern, String value) {
         if (pattern == null || value == null) {
             return false;
@@ -310,8 +318,14 @@ public final class Conditions {
         if (!p.contains("*")) {
             return false;
         }
-        String regex = p.replace(".", "\\.").replace("*", ".*");
-        return v.matches(regex);
+        java.util.regex.Pattern compiled = WILDCARD_CACHE.computeIfAbsent(p,
+                key -> java.util.regex.Pattern.compile(key.replace(".", "\\.").replace("*", ".*")));
+        return compiled.matcher(v).matches();
+    }
+
+    /** 缓存规模（诊断用）。 */
+    public static int wildcardCacheSize() {
+        return WILDCARD_CACHE.size();
     }
 
     /** 药水解析转发（供动作使用）。 */

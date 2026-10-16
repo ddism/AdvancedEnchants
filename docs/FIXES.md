@@ -82,6 +82,41 @@ java -cp "target/classes;<paper-api.jar>;.verify-libs/snakeyaml-2.2.jar" \
 
 ---
 
+## 第三轮：逐动作体检 + 双结算排查
+
+第二轮之后又做了一轮「逐个动作 handler 体检 + 跨版本方法对照 + 双结算排查」，再发现 4 处缺陷：
+
+| # | 问题 | 后果 | 修复落点 |
+|---|---|---|---|
+| 26 | **`SPAWN_PROJECTILE` 用 `World#spawn(抽象类)`**：`EntityType.ARROW.getEntityClass()` 返回抽象的 `Arrow` 类，服务端无法实例化 | `multishot_plus` / `quick_draw` / `piercing_shot` 每次触发都抛异常，静默落到 catch 里；`SPAWN_PROJECTILE` 实际只在回退路径勉强工作 | 改用 `Player#launchProjectile(具体类, 速度)`；新增 `projectileClass()` 把 `ARROW`/`TIPPED_ARROW`/`SPECTRAL_ARROW` 等抽象类型映射到真实实现类 |
+| 27 | **举盾时同一件附魔结算两次**：盾牌同时存在于「副手」与「盔甲列表」，`ON_DAMAGED` 跑一遍、`ON_SHIELD_BLOCK` 分支又跑一遍 | `shield_wall` / `energy_shield` 的减伤翻倍；配合 `DAMAGE_ADD` 会更明显 | 新增 `EnchantRegistry#anyDefinesTrigger()` 与 `filterItemsByTrigger()`；`ON_SHIELD_BLOCK` 只跑「确实在该触发点上定义了动作」的物品 |
+| 28 | **箭矢伤害双结算**：弹射物命中先触发 `ON_PROJECTILE_HIT`（含 `DAMAGE_MULTIPLY`），随后产生 `EntityDamageEvent` 又跑一遍 `ON_HIT` | 弓箭类附魔的加成被算两次（`power_shot` / `sniper` 等） | 新增 `isProjectileAttack()`；弹射物伤害只走 `ON_PROJECTILE_HIT` 通道 |
+| 29 | **通配匹配热路径每次重新编译正则**：`ON_BLOCK_BREAK` 的每个 `BLOCK` 条件都会 `String.matches(regex)` | 挖掘频繁时产生可观测卡顿（129 条附魔里 13 处用到 `BLOCK` 通配） | `Conditions#wildcard` 增加 `Pattern` 缓存（`ConcurrentHashMap`），模式来自配置、天然有界 |
+
+同时清掉死方法 `ItemTags.metaOfAny()`。
+
+### 三轮累计
+
+| 轮次 | 发现并修复 |
+|---|---|
+| 第一轮（独立红队评审） | 20 项（掉落回写、攻防通道、三个监听器、附魔台接入、药水/粒子别名、`SOULBOUND`、`SET_BLOCK`、文档与配置对齐…） |
+| 第二轮（回归自查） | 5 项（`SURVIVE` 无效、摔落双加算、渔获回写、`ON_EQUIP` 缺监听、粒子别名链被覆盖） |
+| 第三轮（逐动作体检） | 4 项（弹射物生成、举盾双结算、箭矢双结算、正则缓存） |
+| **合计** | **29 项** |
+
+### 三轮后验证
+
+| 检查 | 结果 |
+|---|---|
+| `javac --release 21` | ✅ 0 错误，36 个 class |
+| `build-no-maven.cmd` | ✅ 出包 `dist/AdvancedEnchants-1.0.0.jar` |
+| `YamlVerifier` | ✅ PASS：129 条 / 160 触发块 / 0 错误 0 警告 |
+| `EnumAudit` | ✅ PARTICLE / SOUND / ENTITY / MATERIAL 全部可用（粒子 13 项走运行时别名） |
+| 事件监听器 | 24 个 `@EventHandler`，26 个触发器全部有监听路径 |
+| 35 个动作 handler | 逐个检查了空指针、字段读取、限流与安全开关 |
+
+---
+
 ## 仍未验证 / 已知限制
 
 - **未在真实服务端启动过**：本机无 Paper 服务端与网络，只做到「编译 + 静态校验 + 字节码加载」。

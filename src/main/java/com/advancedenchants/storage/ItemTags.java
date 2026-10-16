@@ -87,13 +87,6 @@ public final class ItemTags {
         return item.getItemMeta();
     }
 
-    private static ItemMeta metaOfAny(ItemStack item) {
-        if (item == null || item.getType() == null || item.getType().isAir()) {
-            return null;
-        }
-        return item.getItemMeta();
-    }
-
     public static int level(ItemStack item, String id) {
         return read(item).getOrDefault(id, 0);
     }

@@ -583,22 +583,61 @@ public final class ActionExec {
         double speed = Math.max(0.5, a.d("speed", 2.0));
         double spread = Math.max(0.0, a.d("spread", 0.1));
         Vector direction = ctx.player.getLocation().getDirection();
+        Class<? extends Projectile> clazz = projectileClass(type);
         for (int i = 0; i < count; i++) {
             Vector dir = direction.clone().add(new Vector(
                     (random.nextDouble() - 0.5) * spread,
                     (random.nextDouble() - 0.5) * spread,
                     (random.nextDouble() - 0.5) * spread)).normalize().multiply(speed);
             try {
-                Class<? extends Projectile> clazz = type.getEntityClass() != null
-                        && Projectile.class.isAssignableFrom(type.getEntityClass())
-                        ? type.getEntityClass().asSubclass(Projectile.class) : Arrow.class;
-                Projectile projectile = ctx.player.getWorld().spawn(ctx.player.getEyeLocation(), clazz);
-                projectile.setVelocity(dir);
+                // launchProjectile 会交给服务端选择正确的实现类，
+                // 比 World#spawn(abstractClass) 安全（后者对 ARROW 这类抽象类型会抛异常）
+                Projectile projectile = ctx.player.launchProjectile(clazz, dir);
                 projectile.setShooter(ctx.player);
             } catch (Throwable t) {
-                Arrow arrow = ctx.player.launchProjectile(Arrow.class, dir);
-                arrow.setShooter(ctx.player);
+                try {
+                    Projectile fallback = ctx.player.launchProjectile(Arrow.class, dir);
+                    fallback.setShooter(ctx.player);
+                } catch (Throwable ignored) {
+                    plugin.getLogger().fine("发射弹射物失败: " + type);
+                }
             }
+        }
+    }
+
+    /** EntityType -> 可 spawn 的具体弹射物类。抽象类型（ARROW 等）在这里被映射到真实实现类。 */
+    @SuppressWarnings("unchecked")
+    private Class<? extends Projectile> projectileClass(EntityType type) {
+        String name = type.name();
+        switch (name) {
+            case "ARROW", "TIPPED_ARROW", "SPECTRAL_ARROW":
+                return Arrow.class;
+            case "SNOWBALL":
+                return org.bukkit.entity.Snowball.class;
+            case "EGG":
+                return org.bukkit.entity.Egg.class;
+            case "ENDER_PEARL":
+                return org.bukkit.entity.EnderPearl.class;
+            case "SMALL_FIREBALL":
+                return org.bukkit.entity.SmallFireball.class;
+            case "FIREBALL":
+                return org.bukkit.entity.Fireball.class;
+            case "DRAGON_FIREBALL":
+                return org.bukkit.entity.DragonFireball.class;
+            case "WITHER_SKULL":
+                return org.bukkit.entity.WitherSkull.class;
+            case "LLAMA_SPIT":
+                return org.bukkit.entity.LlamaSpit.class;
+            case "SHULKER_BULLET":
+                return org.bukkit.entity.ShulkerBullet.class;
+            case "TRIDENT":
+                return org.bukkit.entity.Trident.class;
+            default:
+                Class<?> raw = type.getEntityClass();
+                if (raw != null && Projectile.class.isAssignableFrom(raw)) {
+                    return (Class<? extends Projectile>) raw;
+                }
+                return Arrow.class;
         }
     }
 

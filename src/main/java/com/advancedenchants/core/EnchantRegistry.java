@@ -4,8 +4,10 @@ import com.advancedenchants.model.ActionDef;
 import com.advancedenchants.model.EnchantDef;
 import com.advancedenchants.model.Trigger;
 import com.advancedenchants.model.TriggerDef;
+import com.advancedenchants.storage.ItemTags;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -67,6 +69,37 @@ public final class EnchantRegistry {
     public static boolean hasTrigger(EnchantDef def, Trigger trigger) {
         List<TriggerDef> list = def.triggers().get(trigger);
         return list != null && !list.isEmpty();
+    }
+
+    /** 是否任意已注册附魔在指定触发点上定义了动作（用于跳过不需要的事件处理）。 */
+    public boolean anyDefinesTrigger(Trigger trigger) {
+        for (EnchantDef def : byId.values()) {
+            if (hasTrigger(def, trigger)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 只保留「在指定触发点上定义了动作」的物品。
+     *
+     * 用途：ON_DAMAGED 与 ON_SHIELD_BLOCK 会共用同一批装备（盾牌同时在副手与盔甲列表里），
+     * 若不做区分，同一件附魔会在一次伤害里被结算两次（减伤翻倍）。
+     */
+    public List<ItemStack> filterItemsByTrigger(List<ItemStack> items, Trigger trigger) {
+        List<ItemStack> out = new ArrayList<>(items.size());
+        for (ItemStack item : items) {
+            Map<String, Integer> enchants = ItemTags.read(item);
+            for (String id : enchants.keySet()) {
+                EnchantDef def = byId.get(id);
+                if (def != null && hasTrigger(def, trigger)) {
+                    out.add(item);
+                    break;
+                }
+            }
+        }
+        return out;
     }
 
     /** 是否任意已注册附魔使用了该动作类型（用于跳过完全不需要的事件处理）。 */

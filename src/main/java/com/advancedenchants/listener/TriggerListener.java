@@ -107,7 +107,8 @@ public final class TriggerListener implements Listener {
 
         // 进攻方（主手 + 副手）：只影响"打出的伤害"
         double afterAttack = event.getDamage();
-        if (attacker != null) {
+        boolean projectileAttack = isProjectileAttack(event);
+        if (attacker != null && !projectileAttack) {
             TriggerCtx attackCtx = ctx(attacker, TriggerCtx.TriggerKind.ON_HIT, event);
             attackCtx.victim = victim;
             attackCtx.target = victim;
@@ -132,14 +133,18 @@ public final class TriggerListener implements Listener {
             afterAttack = applyDefense(defendCtx, event, defender, afterAttack);
         }
 
-        // ON_SHIELD_BLOCK：举盾格挡时单独触发一次
-        if (victim instanceof Player blocker && blocker.isBlocking()) {
+        // ON_SHIELD_BLOCK：举盾格挡时单独触发一次。
+        // 只跑「在 ON_SHIELD_BLOCK 上定义了动作」的物品 —— 否则盾牌/盔甲会被 ON_DAMAGED 与这里
+        // 各结算一次，同一件附魔的减伤翻倍生效（盾牌同时存在于副手与盔甲列表里）。
+        if (victim instanceof Player blocker && blocker.isBlocking()
+                && engine.registry().anyDefinesTrigger(Trigger.ON_SHIELD_BLOCK)) {
             TriggerCtx shieldCtx = new TriggerCtx(blocker, TriggerCtx.TriggerKind.ON_SHIELD_BLOCK, event);
             shieldCtx.victim = blocker;
             shieldCtx.target = attacker;
             shieldCtx.damage = afterAttack;
             shieldCtx.estimatedDamage = afterAttack;
-            shieldCtx.items.addAll(defenseItems(blocker));
+            shieldCtx.items.addAll(engine.registry().filterItemsByTrigger(
+                    defenseItems(blocker), Trigger.ON_SHIELD_BLOCK));
             afterAttack = applyDefense(shieldCtx, event, blocker, afterAttack);
         }
 
@@ -172,6 +177,18 @@ public final class TriggerListener implements Listener {
         } catch (Throwable ignored) {
             return false;
         }
+    }
+
+    /**
+     * 本次伤害是否来自弹射物。
+     *
+     * 弹射物命中会先触发 ON_PROJECTILE_HIT（含 DAMAGE_MULTIPLY 等），
+     * 随后才产生这次 EntityDamageEvent。如果这里再跑一遍 ON_HIT，
+     * 同一发箭矢的加成会被计算两次，所以弹射物伤害只走 ON_PROJECTILE_HIT 通道。
+     */
+    private static boolean isProjectileAttack(EntityDamageEvent event) {
+        return event instanceof EntityDamageByEntityEvent byEntity
+                && byEntity.getDamager() instanceof Projectile;
     }
 
     /**
