@@ -664,6 +664,13 @@ public final class TriggerListener implements Listener {
         if (manipulated != null) {
             event.setResult(manipulated);
         }
+        // 上限兜底：原版铁砧叠加走 addEnchant(..., ignoreLevelRestriction=true)，
+        // 会无视附魔自己的 max-level。这里把结果物品的等级钳回上限后再交回事件。
+        ItemStack anvilResult = event.getResult();
+        if (anvilResult != null && !anvilResult.getType().isAir()
+                && engine.registry().clampLevels(anvilResult)) {
+            event.setResult(anvilResult);
+        }
     }
 
     /** ON_ENCHANT：附魔台附魔成功（SCHEMA 定义），不是磨刀石。 */

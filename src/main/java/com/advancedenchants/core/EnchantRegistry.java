@@ -191,4 +191,35 @@ public final class EnchantRegistry {
     public static NamespacedKey keyOf(String id) {
         return NamespacedKey.fromString("advancedenchants:" + id.toLowerCase(java.util.Locale.ROOT));
     }
+
+    /**
+     * 把物品上的自定义附魔等级钳制到各附魔定义的 max-level，就地修改并返回是否有改动。
+     *
+     * 为什么需要：原版铁砧/村民交易/附魔台走的是 {@code ItemMeta#addEnchant(ench, level, true)}，
+     * 那个 {@code ignoreLevelRestriction=true} 会无视 max-level —— 玩家用两本 III 级书就能叠出 VI 级
+     * 「神话」附魔，绕过配置里声明的上限。凡是从原版流程拿回结果物品的地方都该过一遍这个方法。
+     */
+    public boolean clampLevels(ItemStack item) {
+        if (item == null || item.getType().isAir()) {
+            return false;
+        }
+        Map<String, Integer> enchants = ItemTags.read(item);
+        if (enchants.isEmpty()) {
+            return false;
+        }
+        boolean changed = false;
+        for (Map.Entry<String, Integer> entry : enchants.entrySet()) {
+            EnchantDef def = byId.get(entry.getKey());
+            if (def == null) {
+                continue;
+            }
+            int max = def.maxLevel();
+            if (entry.getValue() > max) {
+                if (ItemTags.put(item, def, max)) {
+                    changed = true;
+                }
+            }
+        }
+        return changed;
+    }
 }
