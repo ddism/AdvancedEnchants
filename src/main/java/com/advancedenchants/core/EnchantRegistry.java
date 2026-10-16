@@ -191,4 +191,33 @@ public final class EnchantRegistry {
     public static NamespacedKey keyOf(String id) {
         return NamespacedKey.fromString("advancedenchants:" + id.toLowerCase(java.util.Locale.ROOT));
     }
+
+    /**
+     * 把物品上的自定义附魔等级钳制到各附魔定义的 max-level，就地修改并返回是否有改动。
+     *
+     * 为什么需要：原版流程（铁砧叠加 / 村民交易 / 附魔台 / 战利品）走的是
+     * {@code ItemMeta#addEnchant(ench, level, true)} 或直接写入物品，
+     * 都无视附魔自己的 max-level —— 玩家能拿到超过配置上限的等级。
+     */
+    public boolean clampLevels(ItemStack item) {
+        if (item == null || item.getType().isAir()) {
+            return false;
+        }
+        Map<String, Integer> enchants = ItemTags.read(item);
+        if (enchants.isEmpty()) {
+            return false;
+        }
+        boolean changed = false;
+        for (Map.Entry<String, Integer> entry : enchants.entrySet()) {
+            EnchantDef def = byId.get(entry.getKey());
+            if (def == null) {
+                continue;
+            }
+            int max = def.maxLevel();
+            if (entry.getValue() > max && ItemTags.put(item, def, max)) {
+                changed = true;
+            }
+        }
+        return changed;
+    }
 }
