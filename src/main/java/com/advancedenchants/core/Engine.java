@@ -58,10 +58,14 @@ public final class Engine {
             return mods;
         }
         Trigger trigger = ctx.kind.toModel();
-        java.util.Set<Material> seen = java.util.EnumSet.noneOf(Material.class);
+        // 去重按「同一件物品」而不是「同一种材质」：
+        // 用 Material 去重时，玩家穿两件同材质盔甲（例如两双不同附魔的钻石靴）只会结算其中一件，
+        // 佩戴顺序不同还会导致结果不同。这里用 identity 去重，既避免重复结算同一引用，
+        // 又不会漏掉同材质的另一件装备。
+        java.util.Set<ItemStack> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
 
         for (ItemStack item : ctx.items) {
-            if (item == null || item.getType().isAir() || !seen.add(item.getType())) {
+            if (item == null || item.getType().isAir() || !seen.add(item)) {
                 continue;
             }
             Map<String, Integer> enchants = ItemTags.read(item);
