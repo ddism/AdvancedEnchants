@@ -145,14 +145,23 @@ public final class TriggerListener implements Listener {
 
         event.setDamage(Math.max(0, afterAttack));
 
-        // ON_FALL_DAMAGE：摔落伤害单独走一条通道（acrobat / aero_armor / phoenix_wing 依赖它）
+        // 防守侧已包含 ON_DAMAGED；这里只补 ON_FALL_DAMAGE 专属效果（acrobat / aero_armor / phoenix_wing）
         if (victim instanceof Player faller && isFallDamage(event)) {
             TriggerCtx fallCtx = new TriggerCtx(faller, TriggerCtx.TriggerKind.ON_FALL_DAMAGE, event);
             fallCtx.victim = faller;
             fallCtx.damage = event.getDamage();
             fallCtx.estimatedDamage = event.getDamage();
             fallCtx.items.addAll(gearItems(faller));
-            event.setDamage(Math.max(0, applyDefense(fallCtx, event, faller, event.getDamage())));
+            EventMods fallMods = engine.fire(fallCtx);
+            // 只应用倍率与闪避：避免把 base/per-level 的加算值在已经算过一遍的伤害上再加一次
+            double scaledDamage = fallMods.negatesDamage()
+                    ? 0
+                    : event.getDamage() * fallMods.offenseFactor();
+            double heal = fallMods.get("heal") + fallMods.get("heal.defend");
+            if (heal > 0) {
+                faller.setHealth(Math.min(faller.getMaxHealth(), faller.getHealth() + heal));
+            }
+            event.setDamage(Math.max(0, scaledDamage));
         }
     }
 
@@ -180,7 +189,8 @@ public final class TriggerListener implements Listener {
         if (mark > 0) {
             mods.add("dmg.true", Math.max(0.0, event.getDamage() * mark));
         }
-        double result = mods.applyDamage(event.getDamage());
+        // 只应用进攻侧修正（倍率 / 加算 / 真实伤害），绝不读防守方的 dmg.reduce.*
+        double result = mods.applyOffenseDelta(event.getDamage());
 
         // 吸血按"估算的实际造成伤害"计算
         ctx.estimatedDamage = result;
@@ -229,14 +239,11 @@ public final class TriggerListener implements Listener {
             result = Math.min(result, mods.get("dmg.cap"));
         }
 
-        // 濒死保留：受伤后 1 tick 把血量拉回下限
+        // 濒死保留：必须在事件里就把伤害钳住。
+        // 只靠"事后 1 tick 补血"是无效的 —— Bukkit 在伤害事件之后立刻判定死亡，
+        // 迟到的补血救不回已经死亡并掉落物品的玩家。
         if (mods.flagged(EventMods.Flag.SURVIVE)) {
-            double keep = mods.get("survive.health", 1.0);
-            plugin.getServer().getScheduler().runTask(plugin, () -> {
-                if (defender.isOnline() && defender.getHealth() < keep) {
-                    defender.setHealth(Math.min(defender.getMaxHealth(), keep));
-                }
-            });
+            result = clampLethal(defender, result, mods.get("survive.health", 1.0));
         }
         double heal = mods.get("heal.defend", 0);
         if (heal > 0) {
@@ -244,6 +251,20 @@ public final class TriggerListener implements Listener {
                     defender.setHealth(Math.min(defender.getMaxHealth(), defender.getHealth() + heal)));
         }
         return result;
+    }
+
+    /**
+     * 把「会致死」的伤害钳制到只留下 keepHealth 点生命，使玩家在本次伤害中存活。
+     * 保留 1 tick 无敌帧，避免同 tick 内的第二次伤害立刻致死。
+     */
+    private static double clampLethal(Player defender, double damage, double keepHealth) {
+        double keep = Math.max(0.5, keepHealth);
+        if (defender.getHealth() - damage < keep) {
+            double allowed = Math.max(0, defender.getHealth() - keep);
+            defender.setNoDamageTicks(Math.max(defender.getNoDamageTicks(), 1));
+            return allowed;
+        }
+        return damage;
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -489,6 +510,35 @@ public final class TriggerListener implements Listener {
         engine.fire(ctx);
     }
 
+    /**
+     * ON_EQUIP：装备变化（穿上 / 脱下）。
+     *
+     * Bukkit 没有「穿装备」事件，这里用 PlayerInteractEvent + 右键 AIR + 主手是护甲/鞘翅/盾牌
+     * 来近似（即玩家手持装备右键穿上的那一刻）。脱下装备无法被监听，属已知限制，已在文档注明。
+     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onEquip(PlayerInteractEvent event) {
+        if (event.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_AIR
+                && event.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) {
+            return;
+        }
+        Player player = event.getPlayer();
+        ItemStack item = event.getItem();
+        if (item == null || item.getType().isAir()) {
+            return;
+        }
+        String name = item.getType().name();
+        boolean equippable = name.endsWith("_HELMET") || name.endsWith("_CHESTPLATE")
+                || name.endsWith("_LEGGINGS") || name.endsWith("_BOOTS")
+                || name.equals("ELYTRA") || name.equals("SHIELD") || name.equals("TURTLE_HELMET");
+        if (!equippable) {
+            return;
+        }
+        TriggerCtx ctx = new TriggerCtx(player, TriggerCtx.TriggerKind.ON_EQUIP, event);
+        ctx.items.add(item);
+        engine.fire(ctx);
+    }
+
     // ==================================================================== 交互 / 物品
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -539,11 +589,11 @@ public final class TriggerListener implements Listener {
             drops.add(caught);
             ctx.drops = drops;
             apply(ctx, event, event.getPlayer());
-            // 回写 World 中的渔获实体
+            // 回写 World 中的渔获实体（类型与数量都可能被 CONVERT_DROP / MULTIPLY_DROP 改过）
             ItemStack wanted = drops.get(0);
             if (wanted == null || wanted.getType().isAir() || wanted.getAmount() <= 0) {
                 caughtEntity.remove();
-            } else if (wanted.getType() != caught.getType() || wanted.getAmount() != caught.getAmount()) {
+            } else if (!wanted.isSimilar(caught)) {
                 caughtEntity.setItemStack(wanted.clone());
             }
             for (int i = 1; i < drops.size(); i++) {
@@ -697,20 +747,6 @@ public final class TriggerListener implements Listener {
     /** 摔落/滑翔类判定用：全部盔甲（含鞘翅所在的胸甲槽）。 */
     private List<ItemStack> gearItems(Player player) {
         return movementItems(player);
-    }
-
-    /** 附魔台上下文用：附魔结果与参与的物品。 */
-    private java.util.Map<org.bukkit.enchantments.Enchantment, Integer> enchantValues(ItemStack item) {
-        // Enchantment 在 1.20.4 未实现 Keyed，不能用 EnumMap(Class)，这里用普通 LinkedHashMap
-        java.util.Map<org.bukkit.enchantments.Enchantment, Integer> values = new java.util.LinkedHashMap<>();
-        if (item == null || item.getType().isAir() || !item.hasItemMeta()) {
-            return values;
-        }
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            values.putAll(meta.getEnchants());
-        }
-        return values;
     }
 
     private List<ItemStack> allItems(Player player) {

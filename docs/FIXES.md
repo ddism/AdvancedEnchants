@@ -56,6 +56,32 @@ java -cp "target/classes;<paper-api.jar>;.verify-libs/snakeyaml-2.2.jar" \
 最近一次结果：编译 0 错误 / 36 个 class；`YamlVerifier` 结果 `PASS`；
 `EnumAudit`：PARTICLE 全部可用（13 项经运行时别名回退）、SOUND 1539 项全命中、ENTITY / MATERIAL 全命中。
 
+## 第二轮：修复自身的回归缺陷（自查发现）
+
+第一轮修完并未在真实服务端跑过，因此对「改动本身」做了一次回归自查，又发现 5 个真实缺陷（其中 3 个是
+第一轮修复引入的），已全部修掉：
+
+| # | 问题 | 后果 | 修复落点 |
+|---|---|---|---|
+| 21 | **`SURVIVE` 靠「事后 1 tick 补血」救不活玩家**：Bukkit 在伤害事件之后立刻判定死亡 | `second_wind` / `phoenix_feather` 的"致命伤害留 1 血"实际无效，玩家照死不误 | 改为在事件内钳制伤害（`clampLethal()`）：把本次伤害压到"只留 `survive.health` 点生命"，并给 1 tick 无敌帧 |
+| 22 | **摔落伤害被加算了两次**：`ON_DAMAGED` 先按 `dmg.reduce` 压过一次，`ON_FALL_DAMAGE` 又走了一遍完整 `applyDefense`（含 `DAMAGE_REDUCE` 与 `DAMAGE_ADD`） | `acrobat` / `aero_armor` 的减伤翻倍生效，`DAMAGE_ADD` 型配置会被重复叠 | 新增 `EventMods#offenseFactor()`；摔落通道只应用**倍率与闪避**，不再重复加算 |
+| 23 | **钓鱼渔获回写判据过弱**：只在"类型或数量变化"时回写，未覆盖类型相同但元数据不同的转换 | `CONVERT_DROP` 把鱼变成同名不同物时可能漏写 | 改用 `ItemStack#isSimilar()` 比较 |
+| 24 | **`ON_EQUIP` 仍未注册监听**（评审报告"轻微"项遗漏） | 该触发器有枚举、有文档，但永不触发 | 新增 `onEquip`（`PlayerInteractEvent` + 手持可穿戴物右键）近似"穿上装备"；脱下仍需监听不到，属已知限制 |
+| 25 | **粒子别名落点被覆盖**：`pair("FOOTSTEP","BLOCK")` 把 `BLOCK` 键改写成 `FOOTSTEP` | 1.20.4 上 `Particle.BLOCK`（`40-epic.yml` 两处）解析失败 | 明确"同一个键只能写一次"的约束，`BLOCK` 落点固定为 `BLOCK_CRACK`（更贴切），`FOOTSTEP` 只做单向 |
+
+同时清掉了自查中发现的死代码（未使用的 `enchantValues()`）。
+
+### 二次验证结果
+
+| 检查 | 结果 |
+|---|---|
+| `javac --release 21` | ✅ 0 错误，36 个 class |
+| 已注册事件监听器 | 24 个 `@EventHandler`（覆盖 26 个触发器，`ON_SHIELD_BLOCK`/`ON_FALL_DAMAGE` 在 `onDamage` 内按伤害原因分派） |
+| `YamlVerifier` | ✅ PASS：129 条 / 160 触发块 / 0 错误 0 警告 |
+| `EnumAudit` | ✅ PARTICLE 全部可用（13 项别名回退，含修正后的 `BLOCK->BLOCK_CRACK`）、SOUND / ENTITY / MATERIAL 全命中 |
+
+---
+
 ## 仍未验证 / 已知限制
 
 - **未在真实服务端启动过**：本机无 Paper 服务端与网络，只做到「编译 + 静态校验 + 字节码加载」。

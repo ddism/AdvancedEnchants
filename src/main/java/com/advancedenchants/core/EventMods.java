@@ -77,8 +77,8 @@ public final class EventMods {
     /**
      * 把修改应用到一次伤害上。
      *
-     * @param raw 事件原始伤害
-     * @return 处理后的伤害（未做最终校验）
+     * 结算顺序（重要）：倍率 → 加算伤害 → 真实伤害 → 闪避 → 减伤 → 破甲 → 上限。
+     * 真实伤害必须在倍率之后加，否则会被 DAMAGE_MULTIPLY 一起放大。
      */
     public double applyDamage(double raw) {
         double dmg = raw;
@@ -89,17 +89,6 @@ public final class EventMods {
         }
         for (Map.Entry<String, Double> e : numbers.entrySet()) {
             if (e.getKey().startsWith("dmg.add.")) {
-                dmg += e.getValue();
-            }
-        }
-        // 玩家自身承受的伤害修正（如玻璃大炮的 target: SELF）
-        for (Map.Entry<String, Double> e : numbers.entrySet()) {
-            if (e.getKey().startsWith("mydmg.mult.")) {
-                dmg *= e.getValue();
-            }
-        }
-        for (Map.Entry<String, Double> e : numbers.entrySet()) {
-            if (e.getKey().startsWith("mydmg.add.")) {
                 dmg += e.getValue();
             }
         }
@@ -121,11 +110,56 @@ public final class EventMods {
         }
         double pierce = get("dmg.pierce", 0);
         if (pierce > 0) {
-            // 忽略护甲：按比例补偿一部分伤害
+            // 忽略部分护甲：补偿一部分伤害
             dmg *= 1 + Math.min(1.0, pierce) * 0.5;
         }
         if (numbers.containsKey("dmg.cap")) {
             dmg = Math.min(dmg, numbers.get("dmg.cap"));
+        }
+        return Math.max(0, dmg);
+    }
+
+    /**
+     * 进攻侧倍率（不含任何加算/真实伤害）。
+     * 用途：把「同一数值作用于两段伤害」的场景统一缩放，避免基础伤害被重复叠加。
+     * 例如摔落伤害：先由 ON_DAMAGED（dmg.reduce）压过一次，ON_FALL_DAMAGE 只应再乘一个倍率。
+     */
+    public double offenseFactor() {
+        double factor = 1.0;
+        for (Map.Entry<String, Double> e : numbers.entrySet()) {
+            if (e.getKey().startsWith("dmg.mult.") || e.getKey().startsWith("mydmg.mult.")) {
+                factor *= e.getValue();
+            }
+        }
+        return factor;
+    }
+
+    /** 该事件是否要求伤害归零（闪避）。 */
+    public boolean negatesDamage() {
+        return flagged(Flag.DODGE);
+    }
+
+    /**
+     * 只把「进攻侧」修正量应用到一次伤害上（不含减伤 / 上限）。
+     * 供进攻通道使用：防守方的减伤绝不能被算进进攻方的出伤。
+     */
+    public double applyOffenseDelta(double raw) {
+        double dmg = raw;
+        for (Map.Entry<String, Double> e : numbers.entrySet()) {
+            if (e.getKey().startsWith("dmg.mult.") || e.getKey().startsWith("mydmg.mult.")) {
+                dmg *= e.getValue();
+            }
+        }
+        for (Map.Entry<String, Double> e : numbers.entrySet()) {
+            if (e.getKey().startsWith("dmg.add.") || e.getKey().startsWith("mydmg.add.")) {
+                dmg += e.getValue();
+            }
+        }
+        if (numbers.containsKey("dmg.true")) {
+            dmg += numbers.get("dmg.true");
+        }
+        if (flagged(Flag.DODGE)) {
+            return 0;
         }
         return Math.max(0, dmg);
     }

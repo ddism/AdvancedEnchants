@@ -60,17 +60,19 @@ public final class ParticleAliases {
         pair(map, "TOTEM", "TOTEM_OF_UNDYING");
         pair(map, "SNOWBALL", "ITEM_SNOWBALL");
         pair(map, "SLIME", "ITEM_SLIME");
+        // BLOCK 系列：1.20.5 把 BLOCK_CRACK / BLOCK_DUST 合并为 BLOCK。
+        // 1.20.4 上没有 BLOCK，回退到 BLOCK_CRACK（方块破坏粒子更贴切）。
+        // pair() 双向写入且同一个键只能写一次 —— 下面 put 覆盖 BLOCK 的落点，
+        // 之后不允许再出现任何以 BLOCK 为「第二个参数」的 pair，否则会把落点改掉。
         pair(map, "BLOCK_CRACK", "BLOCK");
         pair(map, "BLOCK_DUST", "BLOCK");
+        map.put("BLOCK", "BLOCK_CRACK");
         pair(map, "DRIP_LAVA", "DRIPPING_LAVA");
         pair(map, "DRIP_WATER", "DRIPPING_WATER");
         pair(map, "CRIT_MAGIC", "ENCHANTED_HIT");
         pair(map, "ENCHANTMENT_TABLE", "ENCHANT");
         pair(map, "MOB_APPEARANCE", "ELDER_GUARDIAN");
-        // ⚠ pair() 双向写入，所以同一个键只能被写一次。
-        // "BLOCK" 这个键在上面三处已被写成 BLOCK_CRACK，这里不能再 pair("FOOTSTEP","BLOCK")，
-        // 否则会把 BLOCK 改成 FOOTSTEP（1.20.4 上 BLOCK 就解析不到了）。
-        // FOOTSTEP 是 1.20.4 独有、1.20.5 已删除的粒子：正向名保留，反向映射不回写 BLOCK。
+        // FOOTSTEP 是 1.20.4 独有、1.20.5 已删除的粒子：正向名保留，反向不回写 BLOCK
         map.put("FOOTSTEP", "BLOCK_CRACK");
         return Map.copyOf(map);
     }
